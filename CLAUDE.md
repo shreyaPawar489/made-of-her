@@ -1,5 +1,19 @@
 # Made of Her — Dev Doc (read this first)
 
+## 0. STATUS (updated ~10:20) — v1 is BUILT and working
+Team: **P1 Engine = Shreya · P2 Data = Emma · P3 UI + pitch = Niranjan.**
+Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `builder.js`, `mock/fake-library.js`, `data/headlines.json`.
+- Run: `python3 -m http.server 8000` → http://localhost:8000 (dev with fake tiles: `?fake=1`).
+- **The photo library builds itself in the browser** on first load (`builder.js`: Wikidata → Wikimedia thumbnails → atlas), shows progress, and caches in IndexedDB. `?rebuild=1` forces a rebuild.
+- Stats panel (press **D**) → **Download library pack** saves `atlas.jpg` + `tiles.json`. Put them in `library/` and commit → app loads instantly/offline (demo safety). Priority order at load: `library/` → IndexedDB cache → live build.
+- So the Python pipeline in §7 is **optional/not needed**; §7 now describes what `builder.js` does.
+
+### Remaining tasks (do these, in order)
+**Shreya (P1, engine.js):** test on real camera; tune defaults (tileSize/strength/mode) for the most obvious image; check fps on a phone; deploy to GitHub Pages (HTTPS) once pushed.
+**Emma (P2, builder.js + data/):** open the app, let the library build (~1–3 min), check the portraits look right (crop/faces); **Download library pack → commit to `library/`**; open Stats and add photos for the gap colors (add occupations to `OCC` in builder.js or more `headlines.json` entries); spot-check facts/links in `headlines.json` (Tennessee governor is "projected").
+**Niranjan (P3, ui.js/style.css + pitch):** polish the start screen + card on a phone; then build the deck + demo-video script; record the demo by 12:00.
+
+
 Hackathon build. **Deadline 12:45 PM PT. Feature freeze 11:45.** Optimize for a working, beautiful demo over completeness. Keep code simple and readable; no refactors, no frameworks, no build step.
 
 ## 1. Product in one paragraph
