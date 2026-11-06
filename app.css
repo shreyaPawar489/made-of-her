@@ -149,7 +149,8 @@ textarea.input { min-height: 140px; resize: vertical; }
 .modal-bg { position: fixed; inset: 0; z-index: 100; background: rgba(34,26,32,.45); display: grid; place-items: center; padding: 16px; animation: obIn .2s ease; }
 .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 440px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
 .modal h3 { font-size: 20px; }
-.modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.modal .actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; }
+.modal .actions .pill { font-size: 13px; padding: 7px 14px; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 120; animation: obIn .2s ease; }
 /* hide the coach dock during onboarding */
 body.onboarding #coachDock { display: none; }
