@@ -96,6 +96,28 @@
     return added;
   };
 
+  // ---------- starter achievements: nobody starts with an empty portrait ----------
+  // starterAchievements(profile, have) -> [{text, track, year}] built only from her onboarding answers,
+  // used to top up whatever her experience/LinkedIn gave so every new portrait starts with at least 3.
+  window.starterAchievements = function (p, have) {
+    p = p || {};
+    const track = p.track || 'law', field = String(label(track) || 'my field').toLowerCase();
+    const yr = new Date().getFullYear(), years = +p.years || 0;
+    const student = ['middle_school', 'high_school', 'college'].includes(p.stage);
+    const role = String(p.role || '').trim(), goal = String(p.goal || '').trim().replace(/[.!]+$/, '');
+    const out = [];
+    if (student) out.push(p.grade ? `Reached ${p.grade}${role ? ' as ' + role : ''}` : (role ? `Became a ${role}` : `Started school with ${field} in mind`));
+    else if (role) out.push(years ? `Worked as ${role}` : `Started as ${role}`);
+    if (years >= 1) out.push(`Built ${years} year${years === 1 ? '' : 's'} of experience in ${field}`);
+    if (p.stage === 'returning') out.push('Decided to return to work');
+    if (p.stage === 'switching') out.push(`Decided to switch careers into ${field}`);
+    if (goal) out.push(`Set a goal: ${goal.length > 120 ? goal.slice(0, 117) + '…' : goal}`);
+    if (p.openToMentor) out.push('Offered to mentor women coming up behind me');
+    out.push(`Chose to explore ${field}`, 'Joined a network of women who went first');
+    const seen = new Set((have || []).map(a => String(a.text).toLowerCase()));
+    return out.filter(t => !seen.has(t.toLowerCase()) && seen.add(t.toLowerCase())).map(text => ({ text, track, year: /^(Joined|Set a goal)/.test(text) ? yr : null }));
+  };
+
   // ---------- composer ----------
   window.openAchievementComposer = function ({ text = '', stepId = null } = {}) {
     const s = JStore.get();

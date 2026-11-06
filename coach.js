@@ -35,13 +35,17 @@
   }
 
   // ---------- experience reader ----------
-  // readExperience(profile) -> Promise<[{text, track, year}]>  (never rejects; [] on any problem or after 12 s)
-  window.readExperience = async function (profile) {
+  // readExperience(profile, {pdf}) -> Promise<[{text, track, year}]>  (never rejects; [] on any problem or after 12 s, 30 s with a PDF)
+  // pdf: optional base64 of her own LinkedIn "Save to PDF" export. The returned array carries .role = her current title from the PDF ("" if none).
+  window.readExperience = async function (profile, opts) {
     try {
       const p = profile || (store() && store().get().profile) || {};
-      if (!p.experienceText || p.experienceText.trim().length < 15) return [];
-      const r = await post('/api/experience', { stage: p.stage, years: p.years, role: p.role, experienceText: p.experienceText, track: p.track }, 12000);
-      return (r.achievements || []).filter(a => a && a.text).slice(0, 8).map(a => ({ text: a.text, track: a.track, year: a.year == null ? null : a.year }));
+      const pdf = (opts && opts.pdf) || '';
+      if (!pdf && (!p.experienceText || p.experienceText.trim().length < 15)) return [];
+      const r = await post('/api/experience', { stage: p.stage, years: p.years, role: p.role, experienceText: p.experienceText || '', track: p.track, pdf: pdf || undefined }, pdf ? 30000 : 12000);
+      const list = (r.achievements || []).filter(a => a && a.text).slice(0, 8).map(a => ({ text: a.text, track: a.track, year: a.year == null ? null : a.year }));
+      list.role = typeof r.role === 'string' ? r.role : '';
+      return list;
     } catch (e) { return []; }
   };
 

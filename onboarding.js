@@ -64,12 +64,16 @@
         <label class="field"><span>What have you already done?</span>
         <textarea class="input" id="f_exp" placeholder="${isStudent() ? 'Captain of debate team, volunteered at a legal aid clinic, AP Gov 5…' : 'Practiced civil rights law for 28 years, argued before the state supreme court, mentored 12 junior associates…'}">${esc(d.experienceText)}</textarea></label>
         <div class="li-box${d.linkedin ? ' on' : ''}" id="liBox">
-          <button type="button" class="li-btn" id="liToggle"><span class="li-logo">in</span>${d.linkedin ? 'LinkedIn connected' : 'Import from LinkedIn'}<small>${d.linkedin ? esc(d.linkedin.replace(/^https?:\/\/(www\.)?/, '')) : 'Optional'}</small></button>
+          <button type="button" class="li-btn" id="liToggle"><span class="li-logo">in</span>${liPdfName ? 'LinkedIn PDF added' : d.linkedin ? 'LinkedIn connected' : 'Import from LinkedIn'}<small>${liPdfName ? 'Claude will read it when you finish' : d.linkedin ? esc(d.linkedin.replace(/^https?:\/\/(www\.)?/, '')) : 'Optional'}</small></button>
           <div class="li-panel" id="liPanel" hidden>
+            <div class="field"><span>Upload your LinkedIn PDF (best)</span>
+              <p class="hint" style="margin:2px 0 8px">On your LinkedIn profile, tap <b>More → Save to PDF</b>. Upload it here and Claude reads your roles, education and awards into your portrait.</p>
+              <button type="button" class="btn small ghost" id="liPdfBtn">${liPdfName ? 'Replace PDF' : 'Upload LinkedIn PDF'}</button>
+              <input type="file" id="liPdfFile" accept="application/pdf,.pdf" hidden> <span class="hint" id="liPdfMsg">${liPdfName ? '✓ ' + esc(liPdfName) : ''}</span></div>
             <label class="field"><span>Your LinkedIn profile URL</span><input class="input" id="f_li" value="${esc(d.linkedin)}" placeholder="linkedin.com/in/your-name" inputmode="url" autocomplete="url"></label>
-            <label class="field"><span>Paste your Experience section (optional)</span>
+            <label class="field"><span>Or paste your Experience section</span>
               <textarea class="input" id="f_liPaste" style="min-height:90px" placeholder="On LinkedIn: open your profile → Experience → select it all and copy. Paste it here."></textarea></label>
-            <p class="hint" style="margin:-6px 0 10px">LinkedIn doesn't share work history with other apps, so you paste it. We only read what you paste.</p>
+            <p class="hint" style="margin:-6px 0 10px">LinkedIn doesn't share work history with other apps, so you bring it: your PDF or a paste. We only read what you give us.</p>
             <button type="button" class="btn small" id="liImport">Add to my experience</button> <span class="hint" id="liMsg"></span>
           </div>
         </div>
@@ -135,8 +139,25 @@
       .filter(x => x && x.length > 2 && !noise.test(x) && !/^[A-Z][a-z]{2} \d{4}\s*[-–]/.test(x) && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()))
       .join('; ').slice(0, 1500);
   }
+  // Her own LinkedIn "Save to PDF" export, kept in memory only (base64) and sent once to /api/experience at finish.
+  let liPdf = '', liPdfName = '';
   function mountLinkedIn() {
-    $('liToggle').onclick = () => { const p = $('liPanel'); p.hidden = !p.hidden; if (!p.hidden) $('f_li').focus(); };
+    $('liToggle').onclick = () => { const p = $('liPanel'); p.hidden = !p.hidden; };
+    $('liPdfBtn').onclick = () => $('liPdfFile').click();
+    $('liPdfFile').onchange = () => {
+      const f = $('liPdfFile').files[0], msg = $('liPdfMsg'); if (!f) return;
+      if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) { msg.textContent = 'That isn\'t a PDF.'; return; }
+      if (f.size > 3 * 1024 * 1024) { msg.textContent = 'That PDF is over 3 MB. Paste your Experience section instead.'; return; }
+      const r = new FileReader();
+      r.onload = () => {
+        liPdf = String(r.result).split(',')[1] || ''; liPdfName = f.name;
+        msg.textContent = '✓ ' + f.name; $('liPdfBtn').textContent = 'Replace PDF';
+        $('liBox').classList.add('on');
+        $('liToggle').innerHTML = '<span class="li-logo">in</span>LinkedIn PDF added<small>Claude will read it when you finish</small>';
+      };
+      r.onerror = () => { msg.textContent = 'Couldn\'t read that file.'; };
+      r.readAsDataURL(f);
+    };
     $('liImport').onclick = () => {
       const url = cleanLinkedIn($('f_li').value), raw = $('f_liPaste').value;
       if ($('f_li').value.trim() && !url) { $('liMsg').textContent = 'That doesn\'t look like a linkedin.com/in/… link.'; return; }
@@ -348,9 +369,13 @@
 
     let list = [];
     const minWait = new Promise(r => setTimeout(r, 1800)); // long enough to see the search, short enough not to bore
-    if (profile.experienceText && window.readExperience) list = await withTimeout(readExperience(JStore.get().profile), 12000, []);
+    if ((profile.experienceText || liPdf) && window.readExperience) list = await withTimeout(readExperience(JStore.get().profile, { pdf: liPdf }), liPdf ? 30000 : 12000, []);
+    // her current title from the LinkedIn PDF fills an empty role on her profile
+    if (list && list.role && !profile.role) { profile.role = list.role; JStore.setProfile(Object.assign({}, JStore.get().profile, { role: list.role })); }
     // API down or slow: use her own words, split into items (nothing invented), so the reveal never falls flat on stage.
     if ((!list || !list.length) && profile.experienceText) list = localExperience(profile.experienceText, track);
+    // nobody starts gray: top up to 3 with starter achievements built from her own answers (stage, role, years, goal)
+    if (window.starterAchievements && (!list || list.length < 3)) list = (list || []).concat(starterAchievements(profile, list).slice(0, 3 - (list ? list.length : 0)));
     if (list && list.length && window.seedPastAchievements) await withTimeout(seedPastAchievements(list), 12000, null);
     await minWait; stopScan();
 
