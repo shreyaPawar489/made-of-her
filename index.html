@@ -30,6 +30,16 @@
     <span id="count" class="pill"></span>
   </header>
 
+  <!-- Relevance: where are you? (scene) + near me (location) -->
+  <section id="relevance" hidden>
+    <div id="sceneChips" class="rel-row" role="group" aria-label="Where are you?"></div>
+    <div class="rel-row">
+      <button id="autoSceneBtn" title="Sends one small snapshot to Claude to guess your setting">✨ Detect my scene</button>
+      <button id="nearMeBtn" class="toggle" title="Uses your location in your browser only; it is never sent anywhere">📍 Women near me</button>
+    </div>
+    <p id="relHint"></p>
+  </section>
+
   <!-- Controls -->
   <nav id="controls" hidden>
     <label>Tiles <input id="tileSize" type="range" min="6" max="40" value="22"></label>
@@ -86,6 +96,7 @@
   </aside>
 
   <script src="engine.js"></script>
+  <script src="relevance.js"></script>
   <script src="mock/fake-library.js"></script>
   <script src="builder.js"></script>
   <script src="ui.js"></script>

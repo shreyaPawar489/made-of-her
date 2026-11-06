@@ -48,7 +48,7 @@
     try {
       await startCamera();
       started = true;
-      $('start').hidden = true; $('topbar').hidden = false;
+      $('start').hidden = true; $('topbar').hidden = false; $('relevance').hidden = false;
       $('hint').hidden = false; setTimeout(() => $('hint').classList.add('fade'), 5000);
       if (matchMedia('(pointer: coarse)').matches) { $('flipFab').hidden = false; $('menuFab').hidden = false; }
       Mosaic.start();
@@ -89,6 +89,49 @@
   $('statsBtn').onclick = () => { $('statsBtn').classList.toggle('on'); $('stats').hidden = !$('stats').hidden; };
   $('exportBtn').onclick = () => LibraryBuilder.exportFiles();
   $('rebuildBtn').onclick = async () => { await LibraryBuilder.clearCache(); location.search = '?rebuild=1'; };
+
+  // ---------- relevance: scene + location (relevance.js) ----------
+  const relHint = $('relHint');
+  function updateRelHint(msg) {
+    if (msg) { relHint.textContent = msg; return; }
+    const s = Relevance.scenes.find(x => x.id === Relevance.getScene());
+    const parts = [];
+    if (s) parts.push(`${s.label} scene`);
+    if (Relevance.hasLocation()) parts.push('women from near you');
+    relHint.textContent = parts.length ? `Showing more: ${parts.join(' + ')}` : 'Pick where you are, and the women in your mosaic will match it.';
+  }
+  function setScene(id) {
+    Relevance.setScene(id);
+    document.querySelectorAll('#sceneChips button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+    updateRelHint();
+  }
+  Relevance.scenes.forEach(s => {
+    const b = document.createElement('button'); b.textContent = s.label; b.dataset.id = s.id;
+    b.onclick = () => setScene(Relevance.getScene() === s.id ? null : s.id);
+    $('sceneChips').appendChild(b);
+  });
+  $('nearMeBtn').onclick = async () => {
+    const btn = $('nearMeBtn');
+    if (btn.classList.contains('on')) { Relevance.setLocation(null); btn.classList.remove('on'); return updateRelHint(); }
+    updateRelHint('Finding your location…');
+    try { await Relevance.locate(); btn.classList.add('on'); updateRelHint(); }
+    catch (e) { updateRelHint(e && e.code === 1 ? 'Location is blocked. Allow it in your browser settings to see women near you.' : 'Could not get your location.'); }
+  };
+  $('autoSceneBtn').onclick = async () => {
+    if (!video.videoWidth) return updateRelHint('Turn on the camera first.');
+    updateRelHint('Looking at your surroundings…');
+    try {
+      const c = document.createElement('canvas'), w = 384; c.width = w; c.height = Math.round(w * video.videoHeight / video.videoWidth);
+      c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+      const r = await fetch('/api/scene', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ image: c.toDataURL('image/jpeg', 0.7).split(',')[1] }) });
+      if (!r.ok) throw new Error('unavailable');
+      const { scene } = await r.json();
+      if (scene && Relevance.scenes.some(s => s.id === scene)) { setScene(scene); }
+      else updateRelHint('Could not tell where you are. Pick a scene above.');
+    } catch (e) { updateRelHint('Auto-detect is not set up yet. Pick a scene above.'); }
+  };
+  updateRelHint();
 
   let lensOn = true;
   document.addEventListener('keydown', e => {
@@ -175,6 +218,11 @@
     const meta = [];
     if (tile.kind === 'headline') { meta.push(tile.year, tile.name); }
     else { if (tile.year) meta.push(tile.era === 'recent' ? tile.year : 'Born ' + tile.year); if (tile.field) meta.push(tile.field); }
+    if (tile.kind !== 'headline' && (tile.place || tile.country)) {
+      const where = [tile.place, tile.country && tile.country !== tile.place ? tile.country : ''].filter(Boolean).join(', ');
+      const d = Relevance.distanceKm(tile);
+      meta.push('From ' + where + (d != null ? ` (${d.toLocaleString()} km from you)` : ''));
+    }
     $('cardMeta').textContent = meta.filter(Boolean).join(' · ');
     $('cardDesc').textContent = tile.desc ? tile.desc.charAt(0).toUpperCase() + tile.desc.slice(1) : '';
     // Longer memo (what she did + why it matters). Fields come from library/tiles.json; all optional.

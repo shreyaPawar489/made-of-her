@@ -79,6 +79,8 @@ Never edit another person's file without telling them. If a contract below must 
 - `memoSource` — URL the memo came from (Wikipedia → show "Summary from Wikipedia (CC BY-SA)").
 - `impact` — one line on why her field matters for education / empowerment / opportunity (field-level context, not a claim about her personally).
 - `themes` — array of tags for matching the viewer's scene. Settings: `classroom lab stage courtroom newsroom clinic field space studio library office government community`. Topics: `education science leadership justice arts health sports business technology media design`. Engine can boost tiles whose `themes` include the detected scene.
+- `place`, `country`, `lat`, `lon` — birthplace (Wikidata P19; falls back to the country's centroid when the place has no coordinates, `lat`/`lon` only set when known). Used for "women near me" and shown on the card as "From X".
+- **Relevance (P2):** `relevance.js` turns the viewer's scene (chips in the top strip) + location (browser geolocation, compared locally, never sent anywhere) into a per-tile ΔE bonus and calls `Mosaic.setBoost(arr)` (additive to Contract B; engine adds the bonus when building the color LUT). `api/scene.js` is an optional Vercel function that guesses the scene from one snapshot using Claude; it needs `ANTHROPIC_API_KEY` in Vercel env vars, otherwise the UI says auto-detect isn't set up and the manual chips still work.
 - Note: these live only in the committed `library/tiles.json` (generated from Wikipedia after the build). `builder.js` does **not** produce them, so don't replace `library/` with a fresh export unless the memo step is re-run.
 
 `id` must equal the tile's index in the atlas.

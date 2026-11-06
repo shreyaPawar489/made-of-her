@@ -20,7 +20,7 @@
 
   let smooth = null, seed = null, cellTile = null, haveFrame = false;
   const lut = new Int16Array(Q3 * K), lutN = new Uint8Array(Q3), lutBest = new Float32Array(Q3).fill(999);
-  let lutDirty = false, lastLut = -1e9, lutReady = false;
+  let lutDirty = false, lastLut = -1e9, lutReady = false, boost = null;
   const crop = { sx: 0, sy: 0, sw: 1, sh: 1 };
   const gap = new Float32Array(Q3);
   const st = { fps: 0, uniqueTiles: 0, matchError: 0, goodMatchPct: 0, gapColors: [] };
@@ -50,12 +50,15 @@
     const L = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) { const l = tiles[i].lab; L[i * 3] = l[0]; L[i * 3 + 1] = l[1]; L[i * 3 + 2] = l[2]; }
     const top = new Int32Array(K), topD = new Float32Array(K);
+    // Optional relevance boost (see setBoost): bonus[t] is in ΔE units; a boosted tile "counts" as that much closer in color.
+    const bonus = boost && boost.length >= N ? boost : null;
     for (let b = 0; b < Q3; b++) {
       const lab = rgb2lab(((((b / (Q * Q)) | 0) + 0.5) * 256) / Q, (((((b / Q) | 0) % Q) + 0.5) * 256) / Q, (((b % Q) + 0.5) * 256) / Q);
       topD.fill(1e12);
       for (let t = 0; t < N; t++) {
         const dl = L[t * 3] - lab[0], da = L[t * 3 + 1] - lab[1], db = L[t * 3 + 2] - lab[2];
-        const d = dl * dl + da * da + db * db;
+        let d = dl * dl + da * da + db * db;
+        if (bonus && bonus[t] > 0) { const e = Math.max(0, Math.sqrt(d) - bonus[t]); d = e * e; }
         if (d < topD[K - 1]) {
           let j = K - 1;
           while (j > 0 && topD[j - 1] > d) { topD[j] = topD[j - 1]; top[j] = top[j - 1]; j--; }
@@ -65,7 +68,10 @@
       const best = Math.sqrt(topD[0]), lim = (best + 12) * (best + 12);
       let n = 0;
       for (let k = 0; k < K; k++) if (topD[k] <= lim && topD[k] < 1e12) lut[b * K + n++] = top[k];
-      lutN[b] = n; lutBest[b] = best;
+      lutN[b] = n;
+      // report the TRUE color error of the best candidate (not the boosted one) so stats stay honest
+      const t0 = top[0], l0 = lab, tl = tiles[t0].lab;
+      lutBest[b] = Math.hypot(tl[0] - l0[0], tl[1] - l0[1], tl[2] - l0[2]);
     }
     lutReady = true;
     if (cellTile) cellTile.fill(-1);
@@ -303,6 +309,9 @@
       for (const t of tiles) if (!t.lab && t.rgb) t.lab = rgb2lab(t.rgb[0], t.rgb[1], t.rgb[2]);
       lutDirty = true; lastLut = -1e9;
     },
+    // Relevance boost (additive to Contract B). arr[i] = ΔE bonus for tile i (0 = none); null clears.
+    // Used by relevance.js to favor tiles matching the viewer's scene / location.
+    setBoost(arr) { boost = arr || null; lutDirty = true; lastLut = -1e9; },
     libraryUpdated() {
       for (const t of tiles) if (!t.lab && t.rgb) t.lab = rgb2lab(t.rgb[0], t.rgb[1], t.rgb[2]);
       lutDirty = true;
