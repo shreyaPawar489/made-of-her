@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
         messages
       })
     });
-    if (!r.ok) return res.status(502).json({ error: 'upstream ' + r.status });
+    if (!r.ok) { const t = await r.text(); console.error('anthropic', r.status, t); return res.status(502).json({ error: 'upstream ' + r.status, detail: t.slice(0, 300) }); }
     const j = await r.json();
     const block = (j.content || []).find(c => c.type === 'tool_use');
     const o = (block && block.input) || {};
