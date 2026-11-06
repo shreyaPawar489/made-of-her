@@ -48,7 +48,9 @@
     try {
       await startCamera();
       started = true;
-      $('start').hidden = true; $('topbar').hidden = false; $('controls').hidden = false;
+      $('start').hidden = true; $('topbar').hidden = false;
+      $('hint').hidden = false; setTimeout(() => $('hint').classList.add('fade'), 5000);
+      if (matchMedia('(pointer: coarse)').matches) $('flipFab').hidden = false;
       Mosaic.start();
     } catch (e) {
       $('camError').hidden = false;
@@ -56,6 +58,7 @@
         'Camera blocked. Allow camera access in your browser settings and try again.';
     }
   };
+  $('flipFab').onclick = () => $('flipBtn').click();
   $('flipBtn').onclick = async () => { facing = facing === 'user' ? 'environment' : 'user'; try { await startCamera(); } catch (e) { facing = 'user'; } };
 
   // ---------- controls ----------
@@ -81,30 +84,60 @@
     if (!started || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.code === 'Space') { e.preventDefault(); $('freezeBtn').click(); }
     else if (e.key === 'd' || e.key === 'D') $('statsBtn').click();
+    else if (e.key === 's' || e.key === 'S') $('controls').hidden = !$('controls').hidden;
+    else if (e.key === '0') Mosaic.resetView();
     else if (e.key === 'l' || e.key === 'L') { lensOn = !lensOn; if (!lensOn) Mosaic.setLens(null); }
-    else if (e.key === 'Escape') closeCard();
+    else if (e.key === 'Escape') { if ($('card').hidden) Mosaic.resetView(); closeCard(); }
   });
 
-  // ---------- lens + tap ----------
-  let down = null;
+  // ---------- hover, zoom, pan, pinch, tap ----------
+  const pts = new Map(); // active pointers
+  let down = null, moved = false, pinchD = 0;
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const k = e.ctrlKey ? 0.012 : 0.0025; // ctrlKey = trackpad pinch
+    Mosaic.zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * k));
+  }, { passive: false });
+  canvas.addEventListener('dblclick', e => {
+    if (Mosaic.zoom() > 1.05) Mosaic.resetView(); else Mosaic.zoomAt(e.clientX, e.clientY, 4);
+  });
   canvas.addEventListener('pointerdown', e => {
-    down = { x: e.clientX, y: e.clientY };
+    canvas.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 1) { down = { x: e.clientX, y: e.clientY }; moved = false; }
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); moved = true; }
     if (e.pointerType !== 'mouse' && lensOn) Mosaic.setLens({ x: e.clientX, y: e.clientY });
   });
   canvas.addEventListener('pointermove', e => {
-    if (!lensOn) return;
-    if (e.pointerType === 'mouse' || down) Mosaic.setLens({ x: e.clientX, y: e.clientY });
+    const prev = pts.get(e.pointerId);
+    if (prev) {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) {
+        const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchD) Mosaic.zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinchD);
+        pinchD = d;
+      } else if (down) {
+        if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) moved = true;
+        if (moved && Mosaic.zoom() > 1) Mosaic.panBy(e.clientX - prev.x, e.clientY - prev.y);
+      }
+    }
+    if (lensOn && (e.pointerType === 'mouse' || prev)) Mosaic.setLens({ x: e.clientX, y: e.clientY });
   });
-  canvas.addEventListener('pointerup', e => {
-    const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10;
+  function endPointer(e) {
+    const tap = pts.size === 1 && down && !moved;
+    pts.delete(e.pointerId);
+    if (pts.size < 2) pinchD = 0;
+    if (pts.size) return;
     down = null;
     if (e.pointerType !== 'mouse') Mosaic.setLens(null);
-    if (tap && started) {
+    if (tap && started && e.type === 'pointerup') {
       const tile = Mosaic.tileAt(e.clientX, e.clientY);
       if (tile) { setFrozen(true); openCard(tile, true); }
     }
-  });
-  canvas.addEventListener('pointerleave', () => { down = null; Mosaic.setLens(null); });
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') Mosaic.setLens(null); });
 
   // ---------- story card ----------
   function openCard(tile, refreshFrame) {

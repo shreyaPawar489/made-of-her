@@ -5,12 +5,16 @@
 
   let canvas, ctx, video;
   let atlas = null, tiles = [], perRow = 48, TS = 64;
-  const opts = { tileSize: 14, strength: 0.4, mode: 'tint', rotate: true, mirror: true };
+  const opts = { tileSize: 22, strength: 0.4, mode: 'tint', rotate: true, mirror: true };
   let running = false, frozen = false, lens = null;
+  // zoom/pan view: screen = world * s + (x, y), device px. tv = target (eased toward each frame)
+  const view = { s: 1, x: 0, y: 0 }, tv = { s: 1, x: 0, y: 0 };
   let W = 0, H = 0, dpr = 1, cs = 0, cols = 0, rows = 0;
 
   const small = document.createElement('canvas');
   const sctx = small.getContext('2d', { willReadFrequently: true });
+  const layer = document.createElement('canvas'); // cached tile layer: only changed cells are redrawn
+  const lctx = layer.getContext('2d');
   const snap = document.createElement('canvas');
   const snapCtx = snap.getContext('2d');
 
@@ -64,15 +68,17 @@
       lutN[b] = n; lutBest[b] = best;
     }
     lutReady = true;
+    if (cellTile) cellTile.fill(-1);
   }
 
   // ---------- geometry ----------
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
     W = Math.round(w * dpr); H = Math.round(h * dpr);
     canvas.width = W; canvas.height = H;
     regrid();
+    resetView();
   }
   function regrid() {
     cs = Math.max(3, Math.round(opts.tileSize * dpr));
@@ -83,6 +89,7 @@
     seed = new Uint8Array(n);
     for (let i = 0; i < n; i++) seed[i] = (Math.random() * 256) | 0;
     cellTile = new Int16Array(n).fill(-1);
+    layer.width = cols * cs; layer.height = rows * cs;
     haveFrame = false;
   }
   function computeCrop(src) {
@@ -111,9 +118,9 @@
     haveFrame = true;
   }
 
-  function drawTiles() {
-    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'low';
+  // Assign a tile to every cell; redraw only cells whose tile changed into the cached layer.
+  function assignTiles() {
+    lctx.imageSmoothingEnabled = true; lctx.imageSmoothingQuality = 'low';
     errSum = 0; goodCount = 0;
     for (let r = 0; r < rows; r++) {
       const y = r * cs;
@@ -123,18 +130,43 @@
         const nn = lutN[b];
         if (!nn) continue;
         const t = lut[b * K + (seed[i] % nn)];
-        cellTile[i] = t;
         const be = lutBest[b];
         errSum += be; if (be < 12) goodCount++; else if (be > 18) gap[b] += 1;
-        ctx.drawImage(atlas, (t % perRow) * TS, ((t / perRow) | 0) * TS, TS, TS, c * cs, y, cs, cs);
+        if (t !== cellTile[i]) {
+          cellTile[i] = t;
+          lctx.drawImage(atlas, (t % perRow) * TS, ((t / perRow) | 0) * TS, TS, TS, c * cs, y, cs, cs);
+        }
+      }
+    }
+  }
+
+  function drawTiles() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    if (view.s === 1 && view.x === 0 && view.y === 0) { ctx.drawImage(layer, 0, 0); return; }
+    // zoomed: draw only the visible cells straight from the atlas at full detail
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    const z = cs * view.s, g = z > 70 ? Math.round(dpr) : 0; // thin gutter once photos are big
+    const c0 = Math.max(0, Math.floor(-view.x / z)), c1 = Math.min(cols - 1, Math.floor((W - view.x) / z));
+    const r0 = Math.max(0, Math.floor(-view.y / z)), r1 = Math.min(rows - 1, Math.floor((H - view.y) / z));
+    for (let r = r0; r <= r1; r++) {
+      const y0 = Math.round(view.y + r * z), y1 = Math.round(view.y + (r + 1) * z);
+      for (let c = c0; c <= c1; c++) {
+        const t = cellTile[r * cols + c];
+        if (t < 0) continue;
+        const x0 = Math.round(view.x + c * z), x1 = Math.round(view.x + (c + 1) * z);
+        ctx.drawImage(atlas, (t % perRow) * TS, ((t / perRow) | 0) * TS, TS, TS, x0, y0, x1 - x0 - g, y1 - y0 - g);
       }
     }
   }
 
   function drawOverlay() {
-    const a = opts.strength;
-    if (a <= 0) return;
+    // the camera overlay fades out as you zoom in, so up close you see only the women
+    const a = opts.strength * Math.max(0, 1 - (view.s - 1) / 2);
+    if (a <= 0.01) return;
     ctx.save();
+    ctx.setTransform(view.s, 0, 0, view.s, view.x, view.y);
     const w = cols * cs, h = rows * cs;
     if (opts.mode === 'ghost') {
       ctx.globalAlpha = a;
@@ -152,48 +184,62 @@
     ctx.restore();
   }
 
+  // Hover: a clean square outline on the cell under the pointer + a small name label.
   function drawLens() {
     if (!lens) return;
-    const px = lens.x * dpr, py = lens.y * dpr, R = 120 * dpr, L = 60 * dpr;
-    const fx = px / cs, fy = py / cs, n = Math.ceil(R / L) + 1;
-    const c0 = Math.floor(fx), r0 = Math.floor(fy);
+    const cell = cellAt(lens.x, lens.y);
+    if (!cell) return;
+    const tile = tileAtCell(cell.c, cell.r);
+    if (!tile) return;
+    const z = cs * view.s;
+    const x = Math.round(view.x + cell.c * z), y = Math.round(view.y + cell.r * z), sz = Math.round(z);
     ctx.save();
-    ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = '#000'; ctx.fillRect(px - R, py - R, 2 * R, 2 * R);
-    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    for (let dy = -n; dy <= n; dy++) for (let dx = -n; dx <= n; dx++) {
-      const c = c0 + dx, r = r0 + dy;
-      if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
-      const t = cellTile[r * cols + c];
-      if (t < 0) continue;
-      ctx.drawImage(atlas, (t % perRow) * TS, ((t / perRow) | 0) * TS, TS, TS, px + (c - fx) * L, py + (r - fy) * L, L, L);
-    }
-    ctx.restore();
-    ctx.save();
-    ctx.lineWidth = 3 * dpr; ctx.strokeStyle = '#fff';
-    ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI * 2); ctx.stroke();
-    const tile = tileAtCell(c0, r0);
-    if (tile) {
-      const label = tile.name + (tile.year ? ' · ' + tile.year : '');
-      ctx.font = `600 ${14 * dpr}px system-ui, -apple-system, sans-serif`;
-      const tw = ctx.measureText(label).width, ph = 28 * dpr, pw = tw + 24 * dpr;
-      let lx = Math.min(Math.max(px - pw / 2, 8 * dpr), W - pw - 8 * dpr);
-      let ly = py + R + 10 * dpr; if (ly + ph > H) ly = py - R - 10 * dpr - ph;
-      ctx.fillStyle = 'rgba(20,10,25,0.85)';
-      roundRect(lx, ly, pw, ph, ph / 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, lx + 12 * dpr, ly + ph / 2);
-    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.lineWidth = Math.max(1.5, 2 * dpr) ; ctx.strokeStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6 * dpr;
+    ctx.strokeRect(x + 0.5, y + 0.5, sz - 1, sz - 1);
+    ctx.shadowBlur = 0;
+    const label = (tile.kind === 'headline' ? tile.title : tile.name) + (tile.year ? '  ' + tile.year : '');
+    ctx.font = `500 ${12 * dpr}px system-ui, -apple-system, sans-serif`;
+    const tw = ctx.measureText(label).width, ph = 22 * dpr, pw = tw + 16 * dpr;
+    let lx = Math.min(Math.max(x + sz / 2 - pw / 2, 6 * dpr), W - pw - 6 * dpr);
+    let ly = y + sz + 6 * dpr; if (ly + ph > H - 6 * dpr) ly = y - 6 * dpr - ph;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    roundRect(lx, ly, pw, ph, 6 * dpr); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, lx + 8 * dpr, ly + ph / 2 + 0.5);
     ctx.restore();
   }
   function roundRect(x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
     ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   }
+  function cellAt(x, y) { // CSS px -> grid cell, through the zoom/pan view
+    if (!cs) return null;
+    const z = cs * view.s;
+    return { c: Math.floor((x * dpr - view.x) / z), r: Math.floor((y * dpr - view.y) / z) };
+  }
   function tileAtCell(c, r) {
     if (!cellTile || c < 0 || r < 0 || c >= cols || r >= rows) return null;
     const t = cellTile[r * cols + c];
     return t >= 0 ? tiles[t] : null;
+  }
+
+  // ---------- zoom / pan ----------
+  const maxScale = () => Math.max(1, (150 * dpr) / cs); // biggest photo ≈ 150 CSS px
+  function clampView(v) {
+    v.s = Math.min(Math.max(v.s, 1), maxScale());
+    const ww = cols * cs * v.s, wh = rows * cs * v.s;
+    v.x = Math.min(0, Math.max(W - ww, v.x));
+    v.y = Math.min(0, Math.max(H - wh, v.y));
+  }
+  function resetView() { tv.s = view.s = 1; tv.x = view.x = 0; tv.y = view.y = 0; }
+  function easeView() {
+    const k = 0.3;
+    view.s += (tv.s - view.s) * k; view.x += (tv.x - view.x) * k; view.y += (tv.y - view.y) * k;
+    if (Math.abs(tv.s - view.s) < 0.002 && Math.abs(tv.x - view.x) < 0.5 && Math.abs(tv.y - view.y) < 0.5) {
+      view.s = tv.s; view.x = tv.x; view.y = tv.y;
+    }
   }
 
   function updateStats(t) {
@@ -214,14 +260,17 @@
     if (!running) return;
     requestAnimationFrame(loop);
     if (lutDirty && t - lastLut > 1200) { buildLUT(); lutDirty = false; lastLut = t; }
+    if (!cols || !rows) { resize(); return; } // canvas had no size yet (hidden tab / early init)
     if (!lutReady || !atlas) { ctx.fillStyle = '#0b0710'; ctx.fillRect(0, 0, W, H); return; }
     const ready = video && video.readyState >= 2 && video.videoWidth;
     if (ready && (!frozen || !haveFrame)) { computeCrop(video); sample(video); }
     if (!haveFrame) return;
-    if (opts.rotate && !frozen && !lens) {
+    easeView();
+    if (opts.rotate && !frozen && view.s === 1) {
       const n = cols * rows, k = Math.max(1, (n * 0.003) | 0);
       for (let j = 0; j < k; j++) seed[(Math.random() * n) | 0]++;
     }
+    assignTiles();
     drawTiles();
     drawOverlay();
     drawLens();
@@ -263,7 +312,7 @@
     setOptions(o) {
       const ts = opts.tileSize;
       Object.assign(opts, o);
-      if (canvas && opts.tileSize !== ts) regrid();
+      if (canvas && opts.tileSize !== ts) { regrid(); resetView(); }
     },
     getOptions() { return { ...opts }; },
     freeze(f) {
@@ -277,8 +326,19 @@
       }
     },
     isFrozen() { return frozen; },
-    setLens(p) { lens = p; },
-    tileAt(x, y) { return tileAtCell(Math.floor((x * dpr) / cs), Math.floor((y * dpr) / cs)); },
+    setLens(p) { lens = p; },   // now a clean square hover highlight + name label
+    tileAt(x, y) { const c = cellAt(x, y); return c ? tileAtCell(c.c, c.r) : null; },
+    // zoom/pan (CSS px). Additive to Contract B.
+    zoomAt(x, y, f) {
+      const px = x * dpr, py = y * dpr, s0 = tv.s;
+      tv.s = Math.min(Math.max(s0 * f, 1), maxScale());
+      const k = tv.s / s0;
+      tv.x = px - (px - tv.x) * k; tv.y = py - (py - tv.y) * k;
+      clampView(tv);
+    },
+    panBy(dx, dy) { tv.x += dx * dpr; tv.y += dy * dpr; clampView(tv); view.x = tv.x; view.y = tv.y; },
+    resetView() { tv.s = 1; tv.x = 0; tv.y = 0; },
+    zoom() { return tv.s; },
     frameSummary() {
       const u = [...new Set(Array.from(cellTile || []).filter(t => t >= 0))];
       for (let i = u.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [u[i], u[j]] = [u[j], u[i]]; }

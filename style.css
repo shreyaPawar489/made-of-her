@@ -10,7 +10,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
-#mosaic { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; cursor: crosshair; }
+#mosaic { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; cursor: zoom-in; }
 #video { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 [hidden] { display: none !important; }
 
@@ -80,3 +80,11 @@ h1 { font-size: clamp(44px, 9vw, 84px); margin: 0 0 12px; letter-spacing: -0.02e
   #controls { gap: 6px 8px; padding: 8px 10px; }
   #stats { width: auto; right: 16px; }
 }
+
+/* Minimal live view: hint + flip button (controls bar is hidden; press S to show) */
+#hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(22px, env(safe-area-inset-bottom)); z-index: 3; margin: 0;
+  padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,0.55); font-size: 13px; color: #fff; pointer-events: none;
+  backdrop-filter: blur(8px); transition: opacity 1.2s; white-space: nowrap; }
+#hint.fade { opacity: 0; }
+.fab { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 48px; height: 48px; padding: 0;
+  font-size: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); }

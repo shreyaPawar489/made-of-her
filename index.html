@@ -32,7 +32,7 @@
 
   <!-- Controls -->
   <nav id="controls" hidden>
-    <label>Tiles <input id="tileSize" type="range" min="6" max="40" value="14"></label>
+    <label>Tiles <input id="tileSize" type="range" min="6" max="40" value="22"></label>
     <label>Image <input id="strength" type="range" min="0" max="80" value="40"></label>
     <select id="mode" aria-label="Blend mode">
       <option value="tint">Tint</option>
@@ -44,6 +44,9 @@
     <button id="flipBtn" title="Switch camera">Flip</button>
     <button id="statsBtn" class="toggle">Stats</button>
   </nav>
+
+  <p id="hint" hidden>Scroll or pinch to zoom in · Tap a face to meet her</p>
+  <button id="flipFab" class="fab" hidden aria-label="Switch camera">⟲</button>
 
   <!-- Story card -->
   <aside id="card" hidden>
