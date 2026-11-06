@@ -118,6 +118,24 @@
   }
   App.renderMe = renderMe;
 
+  // Personal "why is she here" text for a tile (P2). Every tile belongs to one of your steps; the single best-matched
+  // woman per step also has a model-written reason (a.reason). Everyone else gets an honest, personal explanation.
+  function whyHtml(t, a) {
+    const p = (window.JStore && JStore.get().profile) || {};
+    const me = (p.name || '').split(/\s+/)[0] || 'You', her = (t.name || 'She').split(/\s+/)[0];
+    const T = window.App && App.tracks && a.track && App.tracks[a.track];
+    const trackLabel = (T && T.label) || a.track || 'your field';
+    const field = (t.field || '').toLowerCase(), art = /^[aeiou]/.test(field) ? 'an' : 'a';
+    const step = '<b>Your step:</b> “' + esc(a.text) + '”' + (a.past ? ' <span class="muted">(from your experience)</span>' : '');
+    const center = a.womanId === t.id;                                   // the single best-matched woman for this step
+    const real = center && a.reason && !String(a.reason).startsWith(t.name); // a bio like "Name (b. 1947): …" is not a reason
+    const body = real
+      ? '<b>Why ' + esc(her) + ':</b> ' + esc(a.reason)
+      : '<b>Why ' + esc(her) + ':</b> ' + (center ? esc(her) + ' is the closest match we found for this step. ' : esc(me) + ', ' + esc(her) + ' is part of your portrait for this step. ') +
+        (center ? 'She’s listed as ' : 'She’s listed as ') + (field ? art + ' ' + esc(field) : 'a woman') + ' among the women in ' + esc(trackLabel) + ' who went before you.';
+    return '<div class="why">' + step + '<br>' + body + '</div>';
+  }
+
   function showTile(e) {
     if (!window.bigPortrait || !bigPortrait.cellAt) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -134,7 +152,7 @@
       '<div class="muted">' + esc(t.field || '') + (t.year ? ' · b. ' + esc(t.year) : '') + '</div>' +
       '<div>' + esc(t.desc || '') + '</div>' +
       (t.link ? '<a href="' + esc(t.link) + '" target="_blank" rel="noopener">Read her story ↗</a>' : '') + '</div></div>' +
-      (a ? '<div class="why"><b>Here because you:</b> ' + esc(a.text) + (a.reason && a.womanId === t.id ? '<br>' + esc(a.reason) : '') + '</div>' : '');
+      (a ? whyHtml(t, a) : '');
     if (window.matchMedia('(max-width: 799px)').matches) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
