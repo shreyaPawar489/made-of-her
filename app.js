@@ -4,7 +4,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const STAGES = { high_school: 'High school', college: 'College', early: 'Early career', mid: 'Mid career', senior: 'Senior', returning: 'Returning to work', switching: 'Switching careers' };
+  const STAGES = { middle_school: 'Middle school', high_school: 'High school', college: 'College', early: 'Early career', mid: 'Mid career', senior: 'Senior', returning: 'Returning to work', switching: 'Switching careers' };
   const App = { esc, STAGES, tracks: null };
   // canvas#bigPortrait is auto-exposed as window.bigPortrait by the browser; portrait.js stores its instance there, so clear the element alias.
   if (window.bigPortrait instanceof Element) window.bigPortrait = null;
@@ -30,7 +30,8 @@
 
   function subline(p) {
     const bits = [];
-    if (p.stage) bits.push(STAGES[p.stage] || p.stage);
+    if (p.grade) bits.push(p.grade);
+    else if (p.stage) bits.push(STAGES[p.stage] || p.stage);
     if (+p.years > 0) bits.push(p.years + (+p.years === 1 ? ' yr' : ' yrs'));
     return bits.join(' · ');
   }

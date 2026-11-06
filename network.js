@@ -4,8 +4,8 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const STAGE_LABEL = { high_school: 'High school', college: 'College', early: 'Early career', mid: 'Mid career', senior: 'Senior', returning: 'Returning', switching: 'Switching careers' };
-  const GROUP = { high_school: 'student', college: 'student', early: 'early', switching: 'early', returning: 'early', mid: 'experienced', senior: 'experienced' };
+  const STAGE_LABEL = { middle_school: 'Middle school', high_school: 'High school', college: 'College', early: 'Early career', mid: 'Mid career', senior: 'Senior', returning: 'Returning', switching: 'Switching careers' };
+  const GROUP = { middle_school: 'student', high_school: 'student', college: 'student', early: 'early', switching: 'early', returning: 'early', mid: 'experienced', senior: 'experienced' };
   const db = () => window.JDB && JDB.ready && JDB.ready();
 
   let members = [], conns = [], pollT = null, upT = null, started = false;
@@ -68,7 +68,7 @@
   // ---------- rendering ----------
   function cleanName(n) { return String(n || '').replace(/\s*\(sample\)\s*$/i, ''); }
   function sub(m) {
-    return [m.role, STAGE_LABEL[m.stage] || m.stage, (+m.years ? m.years + 'y' : ''), m.city].filter(Boolean).join(' · ');
+    return [m.role, STAGE_LABEL[m.stage] || m.stage, (+m.years ? m.years + ' yrs exp' : ''), m.city].filter(Boolean).join(' · ');
   }
   function avatar(m) {
     return m.avatar ? `<img alt="" src="${esc(m.avatar)}">` : `<div class="ph" style="display:grid;place-items:center;font-weight:600;color:var(--plum)">${esc(cleanName(m.name).slice(0, 1))}</div>`;
