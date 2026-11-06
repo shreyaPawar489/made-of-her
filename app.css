@@ -182,4 +182,3 @@ html, body { overflow-x: hidden; }
 .li-panel { padding: 0 14px 14px; }
 .li-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; font-weight: 600; text-decoration: none; color: #0A66C2; }
 .li-link .li-logo { width: 18px; height: 18px; font-size: 11px; }
-
