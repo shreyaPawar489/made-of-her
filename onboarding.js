@@ -41,8 +41,8 @@
 
   const STEPS = [
     { // 0 About you
-      html: () => `<h1>Every woman who went first is part of your story.</h1>
-        <p class="lead">Join a network where your experience counts, your progress becomes your portrait, and other women help you get where you're going.</p>
+      html: () => `<h1>Find the women a few steps ahead of you.</h1>
+        <p class="lead">Made of Her connects you with mentors and peers on your path. Every step you take adds a real woman who did it first to your portrait.</p>
         <label class="field"><span>Your first name</span><input class="input" id="f_name" value="${esc(d.name)}" autocomplete="given-name" placeholder="e.g. Ana"></label>
         <div class="row"><label class="field"><span>Age</span><input class="input" id="f_age" type="number" min="12" max="99" value="${esc(d.age)}" placeholder="17"></label>
         <label class="field"><span>City</span><input class="input" id="f_city" value="${esc(d.city)}" autocomplete="address-level2" placeholder="San Jose, CA"></label></div>`,
@@ -110,7 +110,7 @@
       ok: () => !!d.photo
     },
     { // 5 Community
-      html: () => `<h1>Find women on your path</h1><p class="lead">Mentors further ahead, peers at your stage.</p>
+      html: () => `<h1>Meet the women on your path</h1><p class="lead">Mentors further along, and peers at your stage you can grow with.</p>
         <label class="toggle"><input type="checkbox" id="f_share" ${d.shareInNetwork ? 'checked' : ''}><span><b>Show me in the network</b><small>Others see your first name, city, path, stage and your mosaic (never your photo).</small></span></label>
         <label class="toggle"><input type="checkbox" id="f_mentor" ${d.openToMentor ? 'checked' : ''}><span><b>★ I'm open to mentoring</b><small>Women earlier on your path can ask you for a conversation.</small></span></label>`,
       read: () => { d.shareInNetwork = $('f_share').checked; d.openToMentor = $('f_mentor').checked; },
@@ -198,7 +198,7 @@
 
   // ---------- render ----------
   function card(inner, dots) {
-    $('onboarding').innerHTML = `<div class="ob"><div class="ob-brand">Made of <em>Her</em></div>
+    $('onboarding').innerHTML = `<aside class="ob-wall" aria-hidden="true"><p>2,056 women who went first.<br><span>And the ones you'll meet here.</span></p></aside><div class="ob"><div class="ob-brand">Made of <em>Her</em></div>
       ${dots ? `<div class="ob-dots">${STEPS.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>` : ''}
       <div class="ob-card ob-step">${inner}</div></div>`;
   }
