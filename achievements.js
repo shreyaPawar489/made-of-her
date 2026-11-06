@@ -25,48 +25,39 @@
   }
 
   // ---------- matching ----------
-  function candidatesFor(track, exclude) {
+  // Candidates for one achievement: the women whose BIOGRAPHY fits what she did, best first (P2: matcher.js).
+  // Falls back to random women of the track if the matcher isn't loaded.
+  function candidatesFor(track, exclude, text) {
+    if (window.JourneyMatch && text) {
+      const ranked = JourneyMatch.rank(text, track, { k: 30, exclude });
+      if (ranked.length >= 5) return ranked;
+    }
     const all = JourneyLib.candidates(track).filter(t => !exclude.has(t.id));
     const withMemo = all.filter(t => t.memo), rest = all.filter(t => !t.memo);
     return shuffle(withMemo).concat(shuffle(rest)).slice(0, 30);
   }
-  // Rank candidates by real word overlap with the achievement, so the model sees women who did something similar
-  // instead of a random 30 (random lists forced stretched matches, e.g. "national presidency" -> a Labor Secretary).
-  const STOP = new Set('the and for with from that this into about over your their have been were was are her his she him them they what when where which while also only more most very just than then some such each other after before during under between first second third years year time made make high school college university national state local'.split(' '));
-  const SYN = { president: 'lead', chair: 'lead', captain: 'lead', founder: 'found', founded: 'found', started: 'found', launched: 'found', elected: 'elect', won: 'award', award: 'award', prize: 'award', medal: 'award', wrote: 'writ', published: 'publi', author: 'writ', taught: 'teach', teacher: 'teach', mentored: 'mentor', research: 'resea', lab: 'resea', debate: 'debat', argued: 'court', court: 'court', volunteered: 'volun', organized: 'organ', organizer: 'organ', coded: 'code', programming: 'code', software: 'code' };
-  function terms(text) {
-    const out = new Set();
-    for (let w of String(text || '').toLowerCase().match(/[a-z]{4,}/g) || []) {
-      if (STOP.has(w)) continue;
-      out.add(SYN[w] || w.slice(0, 5));
-    }
-    return out;
+  // Honest offline reason: only her own description plus the words that really connect her story to the step.
+  function localReason(t, text) {
+    const words = window.JourneyMatch && text ? JourneyMatch.explain(text, t) : [];
+    const bio = String(t.desc || t.field || '').replace(/\s*\([^)]*\)\s*$/, '').split(/[;,]/)[0].replace(/[.\s]+$/, '');
+    const list = words.length > 1 ? words.slice(0, -1).join(', ') + ' and ' + words[words.length - 1] : words[0];
+    return list ? `${bio}. Her story mentions ${list}, like your step.` : `${bio}.`;
   }
-  function rankedFor(it, exclude, n) {
-    const want = terms(it.achievement);
-    const pool = JourneyLib.candidates(it.track).filter(t => !exclude.has(t.id));
-    const scored = pool.map(t => {
-      const have = terms([t.desc, t.memo, t.title, t.field].join(' '));
-      let sc = 0; want.forEach(w => { if (have.has(w)) sc++; });
-      return { t, sc: sc + (t.memo ? 0.25 : 0) + Math.random() * 0.2 };
-    }).sort((a, b) => b.sc - a.sc);
-    return scored.slice(0, n).map(x => x.t);
-  }
-  function localReason(t) { return `${t.name}${t.year ? ' (b. ' + t.year + ')' : ''}: ${t.desc || t.field}.`; }
 
   // items: [{key, achievement, track}] -> Map key -> {womanId, reason}
+  // Each item gets its OWN ranked candidate list under 'k:<key>' (api/match listFor: per-item list -> track list -> all).
+  // Claude only sees the 8 best-ranked women, so it picks among strong fits.
   async function matchAll(items) {
     await JourneyLib.ready;
     const used = new Set(JStore.get().achievements.map(a => +a.womanId));
     const cands = {};
-    // per-item lists (key 'k:<key>'), ranked by overlap with that achievement; fewer per item when batching
-    const per = items.length > 6 ? 12 : items.length > 2 ? 18 : 30;
-    for (const it of items) cands['k:' + it.key] = rankedFor(it, used, per);
+    // per-item candidate lists (API key 'k:<key>'), each ranked best-first by how well her biography fits THAT achievement
+    for (const it of items) cands['k:' + it.key] = candidatesFor(it.track, used, it.achievement);
     const out = new Map();
     try {
       const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), items.length > 1 ? 14000 : 9000);
       const body = { items, candidates: {} };
-      for (const t in cands) body.candidates[t] = cands[t].map(c => ({ id: c.id, name: c.name, desc: c.desc || c.field, memo: (c.memo || '').slice(0, 300) }));
+      for (const it of items) body.candidates['k:' + it.key] = cands['k:' + it.key].slice(0, 8).map(c => ({ id: c.id, name: c.name, desc: c.desc || c.field, memo: (c.memo || '').slice(0, 300) }));
       const r = await fetch(apiBase() + '/api/match', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal });
       clearTimeout(timer);
       if (r.ok) {
@@ -74,10 +65,10 @@
         for (const m of j.matches || []) if (JourneyLib.tile(m.id)) { out.set(String(m.key), { womanId: +m.id, reason: m.reason }); used.add(+m.id); }
       }
     } catch (e) { console.warn('match API unavailable, picking locally', e); }
-    for (const it of items) {          // local fallback for anything the API didn't answer
+    for (const it of items) {          // offline / failed: take the best-ranked woman nobody has used yet
       if (out.has(String(it.key))) continue;
-      const c = (cands['k:' + it.key] || []).find(t => !used.has(t.id)) || JourneyLib.candidates(it.track)[0];
-      used.add(c.id); out.set(String(it.key), { womanId: c.id, reason: localReason(c) });
+      const c = (cands['k:' + it.key] || []).find(t => !used.has(t.id)) || (cands['k:' + it.key] || [])[0] || JourneyLib.candidates(it.track)[0];
+      used.add(c.id); out.set(String(it.key), { womanId: c.id, reason: localReason(c, it.achievement) });
     }
     return out;
   }

@@ -114,12 +114,28 @@
       return out;
     }
 
+    // The women who fill an achievement's tiles: the best matches for what she DID (biography search), not everyone
+    // with the same occupation label. Falls back to the whole track if the matcher isn't loaded (P2: matcher.js).
+    const pools = new Map();
+    function poolFor(a) {
+      const key = (a.text || '') + '|' + (a.track || '');
+      if (pools.has(key)) return pools.get(key);
+      let pool = [];
+      if (window.JourneyMatch && a.text) pool = JourneyMatch.rank(a.text, a.track, { k: 160 });
+      if (pool.length) { // keep only women who really fit: at least 35% of the best score, never fewer than 45
+        const top = pool[0].matchScore || 0, keep = pool.filter(t => t.matchScore >= top * 0.35);
+        pool = keep.length >= 45 ? keep : pool.slice(0, 45);
+      }
+      if (pool.length < 40) { const have = new Set(pool.map(t => t.id)); pool = pool.concat(Lib.candidates(a.track).filter(t => !have.has(t.id))).slice(0, 160); }
+      pools.set(key, pool); return pool;
+    }
+
     function assign() {
       if (!labs || !Lib.tiles.length) return;
       cellTile.fill(-1); cellAch.fill(-1);
       const used = new Map();   // tile id -> count, to spread repeats
       eff.forEach((a, k) => {
-        const cand = Lib.candidates(a.track);
+        const cand = poolFor(a);
         const batch = order.slice(k * PER, k * PER + PER);
         batch.forEach((cell, j) => {
           cellAch[cell] = k;
