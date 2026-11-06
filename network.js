@@ -9,10 +9,10 @@
   const db = () => window.JDB && JDB.ready && JDB.ready();
 
   const COLS = 'select=id,name,city,track,interests,goal,stage,years,role,open_to_mentor,pct,women,avatar,is_sample';
-  let members = [], conns = [], msgs = [], msgsOn = null, pollT = null, upT = null, started = false, threadT = null;
-  const SEEN_KEY = 'moh.seen.v1';
+  let meSaved = false, members = [], conns = [], msgs = [], msgsOn = null, pollT = null, upT = null, started = false, threadT = null;
+  const SEEN_KEY = 'moh.seen.v2'; // per member id
   const seen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (e) { return {}; } };
-  const markSeen = cid => { try { const s = seen(); s[cid] = new Date().toISOString(); localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch (e) { /* private mode */ } };
+  const markSeen = mid => { try { const s = seen(); s[mid] = new Date().toISOString(); localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch (e) { /* private mode */ } };
   // First-conversation prompts: the hard part of reaching out is knowing what to say.
   const PROMPTS = {
     mentor: ['What do you wish you knew at my stage?', 'What was the hardest step on your path, and what got you through it?', 'Could we do a 20-minute video chat sometime in the next two weeks?'],
@@ -43,7 +43,7 @@
       pct: pr.pct || 0, women: pr.women || 0, is_sample: false, updated_at: new Date().toISOString()
     };
     if (avatar && avatar.length < 40000) row.avatar = avatar;
-    return JDB.upsert('members', row);
+    const r = await JDB.upsert('members', row); if (r) meSaved = true; return r;
   }
   function upsertSoon() { clearTimeout(upT); upT = setTimeout(upsertMe, 1500); }
 
@@ -62,16 +62,26 @@
     if ($('network') && !$('network').hidden) renderPage();
   }
 
+  // Direct messages: any member can write to any member (connected or not). Table: messages(from_id, to_id, body), see db/messages.sql.
   async function loadMessages() {
-    const ids = conns.filter(c => c.status === 'accepted').map(c => c.id);
-    if (!ids.length || msgsOn === false) return;
-    const r = await JDB.select('messages', 'select=*&connection_id=in.(' + ids.join(',') + ')&order=created_at.asc&limit=500');
-    if (r) { msgs = r; msgsOn = true; } else if (msgsOn === null) msgsOn = false; // table not created yet (db/messages.sql)
+    if (msgsOn === false) return;
+    const id = myId();
+    const r = await JDB.select('messages', 'select=*&or=(from_id.eq.' + id + ',to_id.eq.' + id + ')&order=created_at.asc&limit=1000');
+    if (r) { msgs = r; msgsOn = true; } else if (msgsOn === null) msgsOn = false; // table not created yet
+    if (msgsOn) { // make sure everyone I'm talking to is loaded (they may be outside my path or the first 200)
+      const missing = [...new Set(msgs.map(x => x.from_id === id ? x.to_id : x.from_id))].filter(x => !memberById(x));
+      if (missing.length) { const m = await JDB.select('members', COLS + '&id=in.(' + missing.join(',') + ')'); if (m) members = members.concat(m); }
+    }
   }
-  const thread = cid => msgs.filter(x => String(x.connection_id) === String(cid));
-  function unread(cid) {
-    const last = thread(cid).filter(x => x.from_id !== myId()).pop();
-    return !!last && (!seen()[cid] || last.created_at > seen()[cid]);
+  const thread = mid => msgs.filter(x => (x.from_id === mid && x.to_id === myId()) || (x.to_id === mid && x.from_id === myId()));
+  function unread(mid) {
+    const last = thread(mid).filter(x => x.from_id === mid).pop();
+    return !!last && (!seen()[mid] || last.created_at > seen()[mid]);
+  }
+  function conversations() { // [{m, last}] newest first
+    const by = new Map();
+    msgs.forEach(x => { const o = x.from_id === myId() ? x.to_id : x.from_id; by.set(o, x); });
+    return [...by.entries()].map(([id, last]) => ({ m: memberById(id), last })).filter(x => x.m).sort((a, b) => (a.last.created_at < b.last.created_at ? 1 : -1));
   }
 
   // ---------- matching ----------
@@ -102,12 +112,17 @@
     if (!m.avatar && window.JourneyLib && JourneyLib.memberAvatar) { const u = JourneyLib.memberAvatar(m); if (u) return `<img alt="" src="${u}" title="${esc(cleanName(m.name))}'s mosaic">`; }
     return m.avatar ? `<img alt="" src="${esc(m.avatar)}">` : `<div class="ph" style="display:grid;place-items:center;font-weight:600;color:var(--plum)">${esc(cleanName(m.name).slice(0, 1))}</div>`;
   }
+  function msgBtn(m, primary) {
+    return `<button class="btn small ${primary ? '' : 'ghost'}" data-msg="${m.id}" aria-label="Message ${esc(cleanName(m.name))}">Message${unread(m.id) ? ' <span class="dot"></span>' : ''}</button>`;
+  }
   function action(m) {
     const c = connWith(m.id);
-    if (!c) return `<button class="btn small" data-connect="${m.id}">Connect</button>`;
-    if (c.status === 'accepted') return `<button class="btn small ghost" data-thread="${c.id}">Message${unread(c.id) ? ' <span class="dot"></span>' : ''}</button>`;
-    if (c.to_id === myId()) return `<button class="btn small coral" data-accept="${c.id}">Accept</button>`;
-    return '<span class="pill">Pending</span>';
+    let main;
+    if (!c) main = `<button class="btn small" data-connect="${m.id}">Connect</button>`;
+    else if (c.status === 'accepted') return `<div class="acts">${msgBtn(m, true)}</div>`;
+    else if (c.to_id === myId()) main = `<button class="btn small coral" data-accept="${c.id}">Accept</button>`;
+    else main = '<span class="pill">Pending</span>';
+    return `<div class="acts">${main}${msgBtn(m)}</div>`;
   }
   function person(m, extra) {
     return `<div class="person" data-member="${m.id}"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
@@ -125,7 +140,7 @@
   }
 
   function renderBadge() {
-    const n = conns.filter(c => c.to_id === myId() && c.status === 'pending').length + conns.filter(c => c.status === 'accepted' && unread(c.id)).length;
+    const n = conns.filter(c => c.to_id === myId() && c.status === 'pending').length + conversations().filter(x => unread(x.m.id)).length;
     const b = $('netBadge'); if (!b) return;
     b.hidden = !n; b.textContent = n;
   }
@@ -147,13 +162,15 @@
       section('Requests' + (reqs.length ? ` <span class="badge">${reqs.length}</span>` : ''),
         reqs.map(c => { const m = memberById(c.from_id); return m ? person(m, c.note ? `<div class="note">“${esc(c.note)}”</div>` : '') : ''; }),
         'No requests right now.', 'full') +
+      (msgsOn ? section('Messages', conversations().map(({ m, last }) => person(m, `<div class="note">${last.from_id === myId() ? 'You: ' : ''}${esc(last.body.replace(/https:\/\/meet\.jit\.si\/\S+/g, '📹 video chat link').slice(0, 80))}</div>`)),
+        'No messages yet. You can message any woman here, connected or not.', 'full') : '') +
       (mentees.length ? section('Women you could mentor', mentees.slice(0, 8).map(m => person(m)), '') : '') +
       section('Mentors on your path', mentors.slice(0, 8).map(m => person(m)), 'No mentors on your path yet.') +
       section('Peers at your stage', peers.slice(0, 8).map(m => person(m)), 'No peers yet. Invite a friend!') +
       section('Your connections', mine.map(m => person(m)).concat(sent.map(m => person(m))), 'Connect with a mentor or peer to start.', 'full') +
       `<div class="card full how"><h3>How connecting works</h3><ol>
         <li><b>Ask.</b> Send a short note to a mentor further along or a peer at your stage.</li>
-        <li><b>Talk.</b> Once she accepts, message here and set up a 20-minute video call. No phone numbers or emails needed.</li>
+        <li><b>Talk.</b> Message any woman here, even before you connect, and set up a 20-minute video call. No phone numbers or emails needed.</li>
         <li><b>Grow together.</b> Log what you did after the chat. It adds a woman to both of your portraits.</li></ol>
         <p class="muted" style="margin:8px 0 0"><b>Coming next:</b> Circles of six women at the same stage who meet once a month, mentor office hours, and verified mentors.</p></div>` +
       '</div>';
@@ -205,7 +222,7 @@
       ${tracks.length ? `<div class="prof-sec"><span class="muted">Paths she's on</span><div class="chips">${tracks.map(t => `<span class="pill">${esc(label(t))}</span>`).join(' ')}</div></div>` : ''}
       ${c.note ? `<div class="prof-sec"><span class="muted">${c.from_id === myId() ? 'Your note to her' : 'Her note to you'}</span><p class="note">“${esc(c.note)}”</p></div>` : ''}
       <p class="muted prof-since">✓ Connected${since ? ' · ' + since : ''}</p>
-      <div class="actions"><button class="btn link" data-close>Close</button><button class="btn" data-thread="${c.id}">Message ${esc(first)}</button></div></div>`);
+      <div class="actions"><button class="btn link" data-close>Close</button><button class="btn" data-msg="${m.id}">Message ${esc(first)}</button></div></div>`);
     box.classList.add('modal-prof');
     // older members saved a tiny 96px picture: don't blow it up past ~2x, or it turns to pixels
     const pic = box.querySelector('.prof-head img');
@@ -240,14 +257,17 @@
   }
 
   // ---------- messages + video chat ----------
-  function openThread(cid) {
-    const c = conns.find(x => String(x.id) === String(cid)); if (!c) return;
-    const m = memberById(c.from_id === myId() ? c.to_id : c.from_id); if (!m) return;
+  async function openThread(mid) {
+    let m = memberById(mid);
+    if (!m && db()) { const r = await JDB.select('members', COLS + '&id=eq.' + encodeURIComponent(mid)); if (r && r[0]) { m = r[0]; members.push(m); } }
+    if (!m) { App.toast('Could not load her profile. Try again.'); return; }
+    if (msgsOn === null) await loadMessages();
+    const c = connWith(mid), cid = mid;
     const first = cleanName(m.name).split(' ')[0];
     const isMentor = (+m.years || 0) >= (+(me().profile || {}).years || 0) + 5;
     const box = App.modal(`<div class="thread-head"><a href="#" data-profile="${m.id}">${avatar(m)}</a><div><h3 style="margin:0"><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a></h3><small class="muted">${esc(sub(m))}</small></div></div>
       <div class="thread" id="thList"></div>
-      ${msgsOn === false ? '<p class="empty">Messaging is switching on soon. For now, your note and her reply live in the request.</p>' : `
+      ${msgsOn === false ? '<p class="empty">Messaging isn\'t switched on yet (the messages table is missing). Connect requests still work.</p>' : `
       <div class="chips th-prompts">${PROMPTS[isMentor ? 'mentor' : 'peer'].map(q => `<button type="button" class="chip small" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
       <div class="th-form"><textarea class="input" id="thInput" maxlength="1000" placeholder="Write to ${esc(first)}…"></textarea></div>
       <div class="actions"><button class="btn ghost small" id="thCall" title="Creates a free video room link (Jitsi) and sends it">📹 Plan a video chat</button><span style="flex:1"></span><button class="btn link" data-close>Close</button><button class="btn" id="thSend">Send</button></div>`}`);
@@ -255,16 +275,18 @@
     const draw = () => {
       const list = box.querySelector('#thList'); if (!list) return;
       const t = thread(cid);
-      const head = c.note ? `<div class="msg ${c.from_id === myId() ? 'me' : 'them'}"><small>Request note</small>${esc(c.note)}</div>` : '';
+      const head = c && c.note ? `<div class="msg ${c.from_id === myId() ? 'me' : 'them'}"><small>Request note</small>${esc(c.note)}</div>` : '';
       list.innerHTML = head + (t.length ? t.map(x => `<div class="msg ${x.from_id === myId() ? 'me' : 'them'}">${linkify(x.body)}<small>${fmtTime(x.created_at)}</small></div>`).join('')
-        : `<p class="empty">You're connected. Say hi to ${esc(first)}, or pick a question below.</p>`);
+        : `<p class="empty">${c && c.status === 'accepted' ? "You're connected." : "You don't need to be connected to write."} Say hi to ${esc(first)}, or pick a question below.</p>`);
       list.scrollTop = list.scrollHeight;
       markSeen(cid); renderBadge();
     };
     const send = async body => {
       body = String(body || '').trim().slice(0, 1000); if (!body) return;
+      if (!(me().profile || {}).shareInNetwork) { App.toast('Turn on "Show me in the network" to send messages.'); return; }
       const b = box.querySelector('#thSend'); if (b) b.disabled = true;
-      const r = await JDB.insert('messages', { connection_id: c.id, from_id: myId(), body });
+      if (!meSaved) meSaved = !!(await upsertMe()); // she must exist in members to reply to me
+      const r = await JDB.insert('messages', { from_id: myId(), to_id: mid, body });
       if (b) b.disabled = false;
       if (r && r[0]) { msgs.push(r[0]); const i = box.querySelector('#thInput'); if (i) i.value = ''; draw(); }
       else App.toast('Could not send. Try again.');
@@ -288,7 +310,7 @@
 
   async function accept(cid) {
     const r = await JDB.update('connections', 'id=eq.' + cid, { status: 'accepted' });
-    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; const other = c && (c.from_id === myId() ? c.to_id : c.from_id); App.toast('Connected! Her full profile is open to you now.'); setTimeout(() => other ? openProfile(other) : openThread(cid), 400); }
+    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; const other = c && (c.from_id === myId() ? c.to_id : c.from_id); App.toast('Connected! Her full profile is open to you now.'); setTimeout(() => other && openProfile(other), 400); }
     renderCard(); renderBadge(); if (!$('network').hidden) renderPage();
   }
   document.addEventListener('click', e => {
@@ -296,7 +318,7 @@
     const pf = e.target.closest('[data-profile]'); if (pf) { e.preventDefault(); openProfile(pf.dataset.profile); return; }
     const row = e.target.closest('.person[data-member]');
     if (row && !e.target.closest('button, a')) { openProfile(row.dataset.member); return; }
-    const t = e.target.closest('[data-thread]'); if (t) { e.preventDefault(); openThread(t.dataset.thread); return; }
+    const t = e.target.closest('[data-msg]'); if (t) { e.preventDefault(); openThread(t.dataset.msg); return; }
     const a = e.target.closest('[data-accept]'); if (a) { e.preventDefault(); a.disabled = true; accept(a.dataset.accept); }
   });
 
@@ -307,6 +329,7 @@
     upsertMe().then(load);
     if (window.JourneyLib && JourneyLib.ready) JourneyLib.ready.then(() => { renderCard(); if ($('network') && !$('network').hidden) renderPage(); });
     pollT = setInterval(load, 20000);
+    setInterval(async () => { if (msgsOn && !document.hidden) { const n = msgs.length; await loadMessages(); if (msgs.length !== n) { renderBadge(); renderCard(); if (!$('network').hidden) renderPage(); } } }, 8000);
   }
   // sample members' mosaics finish drawing in the background
   let avT = null;

@@ -54,6 +54,11 @@
       const keepPhoto = state.profile && state.profile.photo;
       state = Object.assign(blank(), JSON.parse(JSON.stringify(p)), { memberId: p.memberId || state.memberId });
       if (keepPhoto && !state.profile.photo) state.profile.photo = keepPhoto;
+      // Optional real face for the demo: drop data/demo-mentor.jpg / data/demo-student.jpg (square, a teammate who agreed).
+      if (!state.profile.photo) {
+        const url = 'data/demo-' + demo + '.jpg';
+        try { if ((await fetch(url, { method: 'HEAD' })).ok) state.profile.photo = url; } catch (e) { /* none */ }
+      }
       save('profile');
     } catch (e) { console.warn('demo load failed', e); }
   })();

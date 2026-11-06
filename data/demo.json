@@ -41,114 +41,114 @@
   ],
   "achievements": [
    {
-    "id": "a_202",
+    "id": "a_992",
     "text": "Passed the California bar exam",
     "track": "law",
-    "womanId": 748,
-    "reason": "Gambian lawyer and judge. Her story mentions judge, legal and court, like your step.",
+    "womanId": 992,
+    "reason": "Sandra Day O'Connor practiced as an attorney before she became the first woman on the U.S. Supreme Court in 1981.",
     "past": true,
+    "stepId": null,
     "year": 1998,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    },
    {
-    "id": "a_205",
+    "id": "a_1487",
     "text": "Argued my first case before the 9th Circuit",
     "track": "law",
-    "womanId": 734,
-    "reason": "American judge and Secretary of Education. Her story mentions circuit, judge and court, like your step.",
+    "womanId": 1487,
+    "reason": "Elena Kagan clerked for a federal Court of Appeals judge early on. She later became the fourth woman on the Supreme Court.",
     "past": true,
+    "stepId": null,
     "year": 2004,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    },
    {
-    "id": "a_214",
+    "id": "a_1140",
     "text": "Founded a legal aid clinic for immigrant families",
     "track": "law",
-    "womanId": 1602,
-    "reason": "Pakistani activist. Her story mentions legal aid, court and law, like your step.",
+    "womanId": 1140,
+    "reason": "Shirin Ebadi, a lawyer and former judge, founded the Defenders of Human Rights Center in Iran and won the 2003 Nobel Peace Prize.",
     "past": true,
+    "stepId": null,
     "year": 2009,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
+   },
+   {
+    "id": "a_860",
+    "text": "Won a landmark housing discrimination case",
+    "track": "law",
+    "womanId": 860,
+    "reason": "Ruth Bader Ginsburg spent her life in the law, and sat on the U.S. Supreme Court from 1993 to 2020.",
+    "past": true,
+    "stepId": null,
+    "year": 2013,
+    "date": "2026-11-06"
+   },
+   {
+    "id": "a_1299",
+    "text": "Named partner at a civil rights firm",
+    "track": "law",
+    "womanId": 1299,
+    "reason": "Before she was First Lady, Michelle Obama graduated from Harvard Law School and started her career at a Chicago law firm.",
+    "past": true,
+    "stepId": null,
+    "year": 2016,
+    "date": "2026-11-06"
+   },
+   {
+    "id": "a_1680",
+    "text": "Testified before the state senate on fair housing",
+    "track": "policy",
+    "womanId": 1680,
+    "reason": "Barbara Jordan, an attorney, was the first Black person elected to the Texas Senate since Reconstruction.",
+    "past": true,
+    "stepId": null,
+    "year": 2019,
+    "date": "2026-11-06"
    },
    {
     "id": "a_219",
-    "text": "Won a landmark housing discrimination case",
-    "track": "law",
-    "womanId": 1140,
-    "reason": "Iranian lawyer. Her story mentions judge, laureate and court, like your step.",
-    "past": true,
-    "year": 2013,
-    "date": "2026-11-06",
-    "stepId": null
-   },
-   {
-    "id": "a_644",
-    "text": "Named partner at a civil rights firm",
-    "track": "law",
-    "womanId": 1007,
-    "reason": "American author. Her story mentions civil rights, equality and activist, like your step.",
-    "past": true,
-    "year": 2016,
-    "date": "2026-11-06",
-    "stepId": null
-   },
-   {
-    "id": "a_1960",
-    "text": "Testified before the state senate on fair housing",
-    "track": "policy",
-    "womanId": 992,
-    "reason": "American lawyer and jurist. Her story mentions senate, justice and elected, like your step.",
-    "past": true,
-    "year": 2019,
-    "date": "2026-11-06",
-    "stepId": null
-   },
-   {
-    "id": "a_785",
     "text": "Trained 40 new public interest lawyers",
     "track": "law",
-    "womanId": 1008,
-    "reason": "Tunisian lawyer. Her story mentions lawyers, like your step.",
+    "womanId": 219,
+    "reason": "Janet Reno led the U.S. Justice Department as attorney general from 1993 to 2001.",
     "past": true,
+    "stepId": null,
     "year": 2021,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    },
    {
-    "id": "a_386",
+    "id": "a_1445",
     "text": "Elected chair of the county bar association",
     "track": "law",
-    "womanId": 1939,
-    "reason": "American politician and lawyer. Her story mentions county, elected and senator, like your step.",
+    "womanId": 1445,
+    "reason": "Kathleen Kennedy Townsend, an attorney, became the first woman to serve as Maryland's lieutenant governor.",
     "past": true,
+    "stepId": null,
     "year": 2023,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    },
    {
-    "id": "a_556",
+    "id": "a_965",
     "text": "Mentored my first Made of Her student",
     "track": "education",
-    "womanId": 566,
-    "reason": "Ukrainian teacher and pedagogue. Her story mentions teacher and educator, like your step.",
+    "womanId": 965,
+    "reason": "Malala Yousafzai has spent her life fighting for girls' education, and won the Nobel Peace Prize at 17.",
     "past": false,
+    "stepId": null,
     "year": null,
-    "date": "2026-11-05",
-    "stepId": null
+    "date": "2026-11-05"
    },
    {
-    "id": "a_388",
+    "id": "a_659",
     "text": "Spoke at a high school career day about law",
     "track": "law",
-    "womanId": 410,
-    "reason": "American feminist and legal activist. Her story mentions law, like your step.",
+    "womanId": 659,
+    "reason": "In 1968 Shirley Chisholm became the first Black woman elected to the U.S. Congress.",
     "past": false,
+    "stepId": null,
     "year": null,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    }
   ],
   "chat": []
@@ -203,37 +203,37 @@
   ],
   "achievements": [
    {
-    "id": "a_403",
+    "id": "a_1009",
     "text": "Joined my college's mock trial team",
     "track": "law",
-    "womanId": 748,
-    "reason": "Gambian lawyer and judge. Her story mentions trial, judge and legal, like your step.",
+    "womanId": 1009,
+    "reason": "Sonia Sotomayor grew up in the Bronx and became the third woman to serve on the U.S. Supreme Court.",
     "past": false,
+    "stepId": null,
     "year": null,
-    "date": "2026-11-01",
-    "stepId": null
+    "date": "2026-11-01"
    },
    {
-    "id": "a_671",
+    "id": "a_1299",
     "text": "Emailed a law professor about research",
     "track": "law",
-    "womanId": 1856,
-    "reason": "14th and 15th President of Republic of China. Her story mentions law professor, like your step.",
+    "womanId": 1299,
+    "reason": "Michelle Obama grew up on Chicago's South Side and went on to Princeton and Harvard Law School.",
     "past": false,
+    "stepId": null,
     "year": null,
-    "date": "2026-11-04",
-    "stepId": null
+    "date": "2026-11-04"
    },
    {
-    "id": "a_363",
+    "id": "a_860",
     "text": "Got an A on my constitutional law midterm",
     "track": "law",
-    "womanId": 410,
-    "reason": "American feminist and legal activist. Her story mentions constitutional law, like your step.",
+    "womanId": 860,
+    "reason": "Ruth Bader Ginsburg spent 27 years interpreting the Constitution on the U.S. Supreme Court.",
     "past": false,
+    "stepId": null,
     "year": null,
-    "date": "2026-11-06",
-    "stepId": null
+    "date": "2026-11-06"
    }
   ],
   "chat": []

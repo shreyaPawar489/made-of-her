@@ -51,10 +51,13 @@
   })();
   Lib.tile = id => Lib.byId.get(+id) || null;
   Lib.fieldsFor = track => Lib.tracks[track] || [];
+  // Real women only: drop fictional characters that slipped into the Wikidata pull (Hermione, Wonder Woman, …).
+  const FICTION = /fictional|character|superhero|comics|cartoon|animated/i;
+  Lib.isReal = t => t.kind === 'person' && !FICTION.test(t.desc || '') && !FICTION.test(t.title || '');
   Lib.candidates = track => {
     const f = new Set(Lib.fieldsFor(track));
-    const c = Lib.tiles.filter(t => t.kind === 'person' && f.has(t.field));
-    return c.length ? c : Lib.tiles.filter(t => t.kind === 'person');
+    const c = Lib.tiles.filter(t => Lib.isReal(t) && f.has(t.field));
+    return c.length ? c : Lib.tiles.filter(Lib.isReal);
   };
   Lib.drawTile = (ctx, tile, x, y, w, h) => {
     const i = tile.id; ctx.drawImage(Lib.atlas, (i % Lib.perRow) * Lib.TS, ((i / Lib.perRow) | 0) * Lib.TS, Lib.TS, Lib.TS, x, y, w, h);

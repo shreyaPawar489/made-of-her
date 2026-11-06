@@ -217,3 +217,5 @@ html, body { overflow-x: hidden; }
 .prof-sec .note { font-style: italic; }
 .prof-since { font-size: 13px; margin: 12px 0 0; }
 .modal.modal-prof { max-width: 480px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.person .acts { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex: none; }
+.person .acts .btn { white-space: nowrap; }
