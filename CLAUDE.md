@@ -1,3 +1,5 @@
+# >>> PIVOT 11:20 — READ JOURNEY.md FIRST. It replaces the product plan below (live mosaic is cut; app is now a women's professional network with a snapshot mosaic portrait). Ownership in JOURNEY.md §2 overrides §3 here. <<<
+
 # Made of Her — Dev Doc (read this first)
 
 ## 0. STATUS (updated ~10:26) — v1 is BUILT and working
