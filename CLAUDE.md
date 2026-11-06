@@ -13,6 +13,13 @@ Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `bui
 **Emma (P2, builder.js + data/):** open the app, let the library build (~1–3 min), check the portraits look right (crop/faces); **Download library pack → commit to `library/`**; open Stats and add photos for the gap colors (add occupations to `OCC` in builder.js or more `headlines.json` entries); spot-check facts/links in `headlines.json` (Tennessee governor is "projected").
 **Niranjan (P3, ui.js/style.css + pitch):** polish the start screen + card on a phone; then build the deck + demo-video script; record the demo by 12:00.
 
+### Staying in sync (every Claude session MUST do this)
+- **Before starting any task:** `git pull --rebase`, re-read this section 0, and run `git log --oneline -15` to see what teammates just did. Mention anything that affects your human's work.
+- **Commit messages are the team feed.** Format: `P1|P2|P3: <what changed and why it matters to others>`. Example: `P2: library/ committed, 1,950 tiles — app now loads offline`.
+- **Plan changes go in this section, not just in chat.** If your human changes scope, cuts a feature, changes a default, or finishes a task, edit the "Remaining tasks" line for their role (only their own line) and the `updated ~HH:MM` time, commit as `<role>: STATUS …`, push, and tell your human to post one line in the group chat.
+- **Contract A/B (sections 4–5) or file ownership never change silently.** Stop and have your human get a 👍 in the group chat first, then update the contract here in the same commit as the code.
+- If `git pull` brings in a change that breaks your part, tell your human immediately instead of working around it.
+
 
 Hackathon build. **Deadline 12:45 PM PT. Feature freeze 11:45.** Optimize for a working, beautiful demo over completeness. Keep code simple and readable; no refactors, no frameworks, no build step.
 
