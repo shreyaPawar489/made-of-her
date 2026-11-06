@@ -60,6 +60,7 @@
     await loadMessages();
     renderCard(); renderBadge();
     if ($('network') && !$('network').hidden) renderPage();
+    window.dispatchEvent(new CustomEvent('moh-network'));
   }
 
   // Direct messages: any member can write to any member (connected or not). Table: messages(from_id, to_id, body), see db/messages.sql.
@@ -179,7 +180,7 @@
   }
 
   // ---------- connect / accept ----------
-  function openConnect(id) {
+  function openConnect(id, note) {
     const m = memberById(id); if (!m) return;
     const p = me().profile || {};
     const first = cleanName(m.name).split(' ')[0];
@@ -187,7 +188,7 @@
       ? `Hi ${first}, I'm ${p.name}${p.goal ? ' and I want to ' + p.goal.replace(/^i want to /i, '').replace(/\.$/, '').toLowerCase() : ''}. Would you be open to a 15-minute chat about your path?`
       : `Hi ${first}, I'm ${p.name}, also on the ${(window.App && App.trackLabel(p.track)) || p.track} path. Want to connect and cheer each other on?`;
     const box = App.modal(`<h3>Connect with ${esc(cleanName(m.name))}</h3><p class="muted" style="margin-top:0">${esc(sub(m))}</p>
-      <label class="field"><span>Add a note</span><textarea class="input" id="cNote" maxlength="280" style="min-height:110px">${esc(dflt.slice(0, 280))}</textarea></label>
+      <label class="field"><span>Add a note</span><textarea class="input" id="cNote" maxlength="280" style="min-height:110px">${esc((note || dflt).slice(0, 280))}</textarea></label>
       <div class="actions"><button class="btn link" data-close>Cancel</button><button class="btn" id="cSend">Send request</button></div>`);
     box.querySelector('#cSend').onclick = async () => {
       const b = box.querySelector('#cSend'); b.disabled = true; b.textContent = 'Sending…';
@@ -341,7 +342,14 @@
     if (e.detail.what === 'achievements') upsertSoon();
   });
 
-  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard, openThread, openProfile, search: runSearch };
+  // read-only snapshot for the agent (nudges.js)
+  function state() {
+    const id = myId();
+    const requests = conns.filter(c => c.to_id === id && c.status === 'pending').map(c => ({ c, m: memberById(c.from_id) })).filter(x => x.m);
+    const reachedOut = new Set(conns.filter(c => c.from_id === id || c.status === 'accepted').map(c => c.from_id === id ? c.to_id : c.from_id));
+    return { loaded: started && members.length > 0, requests, reachedOut, cleanName, sub };
+  }
+  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard, openThread, openProfile, search: runSearch, openConnect, accept, state };
   // app.js may have called showApp() before this file loaded
   if (window.App && App.shown) init();
 })();
