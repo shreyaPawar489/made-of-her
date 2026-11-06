@@ -1,0 +1,241 @@
+{
+ "mentor": {
+  "memberId": "7a1e2c3d-0000-4000-8000-00000000a001",
+  "profile": {
+   "name": "Maria Lopez",
+   "age": 54,
+   "city": "San Jose, CA",
+   "coords": null,
+   "stage": "senior",
+   "years": 28,
+   "role": "Civil rights attorney",
+   "experienceText": "28 years in civil rights law.",
+   "goal": "Help the next generation of women lawyers get their start",
+   "interests": [
+    "law",
+    "policy"
+   ],
+   "track": "law",
+   "openToMentor": true,
+   "shareInNetwork": true,
+   "photo": null,
+   "createdAt": "2026-11-06T18:00:00Z"
+  },
+  "steps": [
+   {
+    "id": "s_m1",
+    "text": "Offer a 20-minute call to a student on your path",
+    "why": "One conversation can change a student's first year.",
+    "track": "law",
+    "effort": "15 min",
+    "status": "todo"
+   },
+   {
+    "id": "s_m2",
+    "text": "Nominate a junior colleague for a speaking slot",
+    "why": "Sponsorship moves careers faster than advice.",
+    "track": "law",
+    "effort": "15 min",
+    "status": "todo"
+   }
+  ],
+  "achievements": [
+   {
+    "id": "a_202",
+    "text": "Passed the California bar exam",
+    "track": "law",
+    "womanId": 202,
+    "reason": "Rachida Dati (b. 1965): French politician and magistrate.",
+    "past": true,
+    "year": 1998,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_205",
+    "text": "Argued my first case before the 9th Circuit",
+    "track": "law",
+    "womanId": 205,
+    "reason": "Helene Hayman (b. 1949): British politician and peer (born 1949).",
+    "past": true,
+    "year": 2004,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_214",
+    "text": "Founded a legal aid clinic for immigrant families",
+    "track": "law",
+    "womanId": 214,
+    "reason": "Lourdes Flores Nano (b. 1959): Peruvian politician.",
+    "past": true,
+    "year": 2009,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_219",
+    "text": "Won a landmark housing discrimination case",
+    "track": "law",
+    "womanId": 219,
+    "reason": "Janet Reno (b. 1938): former Attorney General of the United States (1938-2016).",
+    "past": true,
+    "year": 2013,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_644",
+    "text": "Named partner at a civil rights firm",
+    "track": "law",
+    "womanId": 644,
+    "reason": "Elena Udrea (b. 1973): Romanian politician (1973).",
+    "past": true,
+    "year": 2016,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_1960",
+    "text": "Testified before the state senate on fair housing",
+    "track": "policy",
+    "womanId": 1960,
+    "reason": "Maria Shriver (b. 1955): First Lady of California from 2003 to 2011.",
+    "past": true,
+    "year": 2019,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_785",
+    "text": "Trained 40 new public interest lawyers",
+    "track": "law",
+    "womanId": 785,
+    "reason": "Leanne Wood (b. 1971): Welsh Plaid Cymru politician (born 1971).",
+    "past": true,
+    "year": 2021,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_386",
+    "text": "Elected chair of the county bar association",
+    "track": "law",
+    "womanId": 386,
+    "reason": "Michele Bachmann (b. 1956): American politician (born 1956).",
+    "past": true,
+    "year": 2023,
+    "date": "2026-11-06",
+    "stepId": null
+   },
+   {
+    "id": "a_556",
+    "text": "Mentored my first Made of Her student",
+    "track": "education",
+    "womanId": 556,
+    "reason": "Grace Poe (b. 1968): Filipino politician, Senator.",
+    "past": false,
+    "year": null,
+    "date": "2026-11-05",
+    "stepId": null
+   },
+   {
+    "id": "a_388",
+    "text": "Spoke at a high school career day about law",
+    "track": "law",
+    "womanId": 388,
+    "reason": "Lea Michele (b. 1986): American actress and singer.",
+    "past": false,
+    "year": null,
+    "date": "2026-11-06",
+    "stepId": null
+   }
+  ],
+  "chat": []
+ },
+ "student": {
+  "memberId": "7a1e2c3d-0000-4000-8000-00000000a002",
+  "profile": {
+   "name": "Ana Torres",
+   "age": 20,
+   "city": "Oakland, CA",
+   "coords": null,
+   "stage": "college",
+   "years": 0,
+   "role": "Pre-law student, UC Berkeley",
+   "experienceText": "",
+   "goal": "Become a civil rights lawyer",
+   "interests": [
+    "law",
+    "policy"
+   ],
+   "track": "law",
+   "openToMentor": false,
+   "shareInNetwork": true,
+   "photo": null,
+   "createdAt": "2026-11-01T18:00:00Z"
+  },
+  "steps": [
+   {
+    "id": "s_s1",
+    "text": "Read one Supreme Court opinion summary on Oyez",
+    "why": "Learn how judges reason before you argue.",
+    "track": "law",
+    "effort": "1 hour",
+    "status": "todo"
+   },
+   {
+    "id": "s_s2",
+    "text": "Ask a mentor on your path for a 20-minute call",
+    "why": "Lawyers who went first can save you years.",
+    "track": "law",
+    "effort": "15 min",
+    "status": "todo"
+   },
+   {
+    "id": "s_s3",
+    "text": "Sign up for your campus pre-law society meeting",
+    "why": "Peers on the same path keep you going.",
+    "track": "law",
+    "effort": "this week",
+    "status": "todo"
+   }
+  ],
+  "achievements": [
+   {
+    "id": "a_403",
+    "text": "Joined my college's mock trial team",
+    "track": "law",
+    "womanId": 403,
+    "reason": "Olympia Snowe (b. 1947): American politician; U.S. Senator for Maine.",
+    "past": false,
+    "year": null,
+    "date": "2026-11-01",
+    "stepId": null
+   },
+   {
+    "id": "a_671",
+    "text": "Emailed a law professor about research",
+    "track": "law",
+    "womanId": 671,
+    "reason": "Elizabeth Dole (b. 1936): American politician.",
+    "past": false,
+    "year": null,
+    "date": "2026-11-04",
+    "stepId": null
+   },
+   {
+    "id": "a_363",
+    "text": "Got an A on my constitutional law midterm",
+    "track": "law",
+    "womanId": 363,
+    "reason": "Arundhati Roy (b. 1961): Indian novelist, essayist, and activist.",
+    "past": false,
+    "year": null,
+    "date": "2026-11-06",
+    "stepId": null
+   }
+  ],
+  "chat": []
+ }
+}
