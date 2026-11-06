@@ -1,7 +1,7 @@
 // engine.js — Made of Her mosaic engine (Canvas 2D). Exposes window.Mosaic. See CLAUDE.md §5–6.
 (function () {
   'use strict';
-  const Q = 20, K = 6, Q3 = Q * Q * Q;
+  const Q = 20, K = 16, Q3 = Q * Q * Q; // K=16 candidates per color → much less visible repetition
 
   let canvas, ctx, video;
   let atlas = null, tiles = [], perRow = 48, TS = 64;
@@ -99,9 +99,9 @@
   }
 
   // ---------- per-frame ----------
-  function sample(src) {
+  function sample(src, mirror = opts.mirror) {
     sctx.save();
-    if (opts.mirror) { sctx.translate(cols, 0); sctx.scale(-1, 1); }
+    if (mirror) { sctx.translate(cols, 0); sctx.scale(-1, 1); }
     sctx.drawImage(src, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, cols, rows);
     sctx.restore();
     const d = sctx.getImageData(0, 0, cols, rows).data;
@@ -129,7 +129,10 @@
         const b = bucket(smooth[p], smooth[p + 1], smooth[p + 2]);
         const nn = lutN[b];
         if (!nn) continue;
-        const t = lut[b * K + (seed[i] % nn)];
+        // pick a candidate; skip ones identical to the left/upper neighbor so faces don't clump
+        const left = c > 0 ? cellTile[i - 1] : -1, up = r > 0 ? cellTile[i - cols] : -1;
+        let k0 = seed[i] % nn, t = lut[b * K + k0];
+        for (let tries = 1; tries < nn && (t === left || t === up); tries++) t = lut[b * K + ((k0 + tries) % nn)];
         const be = lutBest[b];
         errSum += be; if (be < 12) goodCount++; else if (be > 18) gap[b] += 1;
         if (t !== cellTile[i]) {
@@ -229,6 +232,7 @@
   const maxScale = () => Math.max(1, (150 * dpr) / cs); // biggest photo ≈ 150 CSS px
   function clampView(v) {
     v.s = Math.min(Math.max(v.s, 1), maxScale());
+    if (v.s < 1.001) { v.s = 1; v.x = 0; v.y = 0; return; } // fully zoomed out → exact identity so the fast cached path runs
     const ww = cols * cs * v.s, wh = rows * cs * v.s;
     v.x = Math.min(0, Math.max(W - ww, v.x));
     v.y = Math.min(0, Math.max(H - wh, v.y));
@@ -263,10 +267,14 @@
     if (!cols || !rows) { resize(); return; } // canvas had no size yet (hidden tab / early init)
     if (!lutReady || !atlas) { ctx.fillStyle = '#0b0710'; ctx.fillRect(0, 0, W, H); return; }
     const ready = video && video.readyState >= 2 && video.videoWidth;
-    if (ready && (!frozen || !haveFrame)) { computeCrop(video); sample(video); }
+    if (ready && !frozen) { computeCrop(video); sample(video); }
+    else if (frozen && !haveFrame) {
+      // regrid while frozen (phone rotate / tile-size change): rebuild from the frozen snapshot, not live video
+      if (snap.width) { computeCrop(snap); sample(snap, false); } else if (ready) { computeCrop(video); sample(video); }
+    }
     if (!haveFrame) return;
     easeView();
-    if (opts.rotate && !frozen && view.s === 1) {
+    if (opts.rotate && !frozen && !lens && view.s === 1) {
       const n = cols * rows, k = Math.max(1, (n * 0.003) | 0);
       for (let j = 0; j < k; j++) seed[(Math.random() * n) | 0]++;
     }
