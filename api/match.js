@@ -43,12 +43,12 @@ module.exports = async (req, res) => {
   const prompt =
     'You connect a woman\'s achievements to real women from history and today who did something similar.\n' +
     'For EACH item, choose exactly one candidate id from that item\'s own candidate list. Use a different woman for each item when possible.\n' +
-    'Pick the candidate whose desc/memo shows she did the SAME KIND of thing (e.g. led a student group, founded something, argued a case, ran a lab, won a competition). ' +
-    'Candidates are listed roughly best-first.\n' +
-    'Write "reason": one sentence, at most 28 words, addressing the user as "you". Be honest about how close the match is:\n' +
-    '- If she clearly did a similar thing, say what she did, e.g. "She also led her university\'s student union before entering politics."\n' +
-    '- If no candidate did a similar thing, do NOT claim one. Name only the genuine shared trait (same field, also a first, also a leader), e.g. "Like you, she took on leadership early; she went on to become a senator."\n' +
-    'Never equate different roles (a student-club presidency is not a cabinet post; a class is not a career). ' +
+    'Pick the candidate whose desc/memo is about the SAME SUBJECT and the SAME KIND of act as the achievement (a biology test -> a biologist, not a chemical engineer; leading a student club -> a woman who led an organization). ' +
+    'Candidates are listed roughly best-first; prefer subject fit over fame.\n' +
+    'Write "reason": one sentence, at most 28 words, to the user as "you". It must name the specific thing she did (from her desc/memo) and tie it to the specific subject or act in the achievement. ' +
+    'If she did the same kind of thing, say so: "She also led her university\'s student union before becoming prime minister." ' +
+    'If she did not, frame her as where this path can lead, not as someone like you: "AP Biology is where it starts: Eva Klein went on to discover natural killer cells." ' +
+    'Never use vague praise like "excels in science", "shares your passion" or "like you, she is driven". Never equate different roles or fields.\n' +
     'Use ONLY facts stated in the candidate\'s desc/memo. Never invent dates, schools, awards or quotes.\n\n' +
     items.map(it =>
       `ITEM key=${JSON.stringify(it.key)} track=${it.track || 'any'}\nAchievement: ${it.achievement}\nCandidates:\n` +

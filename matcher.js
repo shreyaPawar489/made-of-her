@@ -55,7 +55,9 @@
     [/engineer|robot|mechanical|circuit|build|prototype/, 'engineer engineering inventor'],
     [/win|won|award|prize|scholarship|fellowship|honor/, 'award prize winner honoured laureate'],
     [/civil rights|discriminat|housing|immigra|equal|racis|segregat|human rights/, 'civil rights activist human rights lawyer justice equality discrimination'],
-    [/biolog|chem|genetic|climate|environment|ecolog|neuro/, 'biologist chemist scientist research environmental']
+    [/\bbio\b|biolog|genetic|\bcells?\b|\bdna\b|molecul|ecolog|neuro|anatom|physiolog|evolution|microb|immun/, 'biologist biology geneticist molecular cell immunologist microbiologist neuroscientist'],
+    [/\bchem\b|chemis/, 'chemist chemistry'],
+    [/climate|environment/, 'environmental climate ecologist conservation']
   ];
 
   let idx = null;
