@@ -11,7 +11,7 @@ Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `bui
 ### Remaining tasks (do these, in order)
 **Shreya (P1, engine.js):** ✅ (~10:50) engine faster (cached tile layer, dpr≤1.5), default tileSize 22, magnifier circle replaced by smooth zoom (scroll/pinch/double-click, drag to pan) + square hover label; control bar hidden by default (press **S**). New Mosaic API (additive): `zoomAt(x,y,f)`, `panBy(dx,dy)`, `resetView()`, `zoom()`. Next: test on real camera, deploy to GitHub Pages, phone test.
 **Emma (P2, builder.js + data/):** ✅ DONE (~10:30): library built (2,056 tiles) and committed to `library/`, portraits checked, headlines fact-checked (Tennessee governor updated: Blackburn won). Remaining: optional extra photos for saturated blue/red gap colors (not skin tones, low priority).
-**Niranjan (P3, ui.js/style.css + pitch):** polish the start screen + card on a phone; then build the deck + demo-video script; record the demo by 12:00.
+**Niranjan (P3, ui.js/style.css + pitch):** ✅ phone polish done (~11:00): start screen, controls bar (2-row grid on phones), story card = bottom sheet; new ☰ button opens controls on touch devices (S key still works on desktop); checked at 320px and 375px, no overlaps. Next: deck + demo-video script after 11:45; record demo by 12:00.
 
 ### Staying in sync (every Claude session MUST do this)
 - **Before starting any task:** `git pull --rebase`, re-read this section 0, and run `git log --oneline -15` to see what teammates just did. Mention anything that affects your human's work.
