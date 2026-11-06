@@ -179,17 +179,23 @@
       });
     }
 
+    // Canvas resolution follows its on-screen size. While its tab is hidden (clientWidth 0) it must NOT draw or resize:
+    // it used to read its own width back as the CSS size and double on every redraw (192 -> ... -> 15360 px), which could
+    // blow past the browser's canvas limit and leave the Me portrait blank until a reload. When the tab is shown, the
+    // ResizeObserver below fires and draws at the real size.
     function size() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const css = canvas.clientWidth || canvas.width || 192;
-      const px = Math.round(css * dpr);
+      const css = canvas.clientWidth;
+      if (!css) return 0;
+      const px = Math.min(Math.round(css * dpr), 1600);
       if (canvas.width !== px || canvas.height !== px) { canvas.width = canvas.height = px; }
       return px;
     }
 
     function draw() {
       if (destroyed || !colors) return;
-      const W = size(), cs = W / G, now = performance.now();
+      const W = size(); if (!W) return;                       // hidden tab: nothing to draw yet
+      const cs = W / G, now = performance.now();
       ctx.imageSmoothingEnabled = true;
       ctx.fillStyle = '#EDE7E1'; ctx.fillRect(0, 0, W, W);
       let animating = false;
