@@ -30,7 +30,9 @@
   function strHash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
 
   // ---------- library ----------
-  const Lib = { tiles: [], atlas: null, perRow: 48, TS: 64, tracks: FALLBACK_TRACKS, byId: new Map() };
+  const Lib = { tiles: [], atlas: null, perRow: 48, TS: 64, tracks: FALLBACK_TRACKS, byId: new Map(),
+    labels: { law: 'Law', medicine: 'Medicine & health', cs: 'Computer science', engineering: 'Engineering', science: 'Science research', space: 'Space',
+      business: 'Business', policy: 'Politics & policy', media: 'Journalism & writing', arts: 'Arts & design', education: 'Education', sports: 'Sports' } };
   function loadImage(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
   Lib.ready = (async () => {
     const [meta, atlas] = await Promise.all([fetch('library/tiles.json').then(r => r.json()), loadImage('library/atlas.jpg')]);
@@ -39,7 +41,11 @@
     Lib.tiles.forEach(t => Lib.byId.set(t.id, t));
     try {
       const tr = await fetch('data/tracks.json').then(r => r.json());
-      if (tr && tr.tracks) { const m = {}; tr.tracks.forEach(t => { m[t.id] = t.fields; }); Lib.tracks = Object.assign({}, FALLBACK_TRACKS, m); }
+      if (tr && tr.tracks) {
+        const m = {}, list = Array.isArray(tr.tracks) ? tr.tracks : Object.keys(tr.tracks).map(id => Object.assign({ id }, tr.tracks[id]));
+        list.forEach(t => { if (t.fields && t.fields.length) m[t.id] = t.fields; Lib.labels[t.id] = t.label || t.id; });
+        Lib.tracks = Object.assign({}, FALLBACK_TRACKS, m);
+      }
     } catch (e) { /* tracks.json not there yet: fallback mapping */ }
     return Lib;
   })();
