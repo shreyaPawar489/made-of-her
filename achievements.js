@@ -147,7 +147,7 @@
   function renderComposer() {
     const el = $('#composer'), s = JStore.get(); if (!el || !s.profile) return;
     el.innerHTML = `<div class="ach-card ach-composer">
-      <div class="ach-av">${esc(initials(s.profile.name))}</div>
+      <div class="ach-av" data-my-avatar>${esc(initials(s.profile.name))}</div>
       <button class="ach-fake-input" type="button">Log an achievement…</button>
     </div>`;
     $('.ach-fake-input', el).onclick = () => openAchievementComposer({});
@@ -164,7 +164,7 @@
     el.innerHTML = list.map(a => {
       const t = JourneyLib.tile(a.womanId);
       return `<article class="ach-card ach-post">
-        <header><div class="ach-av">${esc(initials(s.profile.name))}</div>
+        <header><div class="ach-av" data-my-avatar>${esc(initials(s.profile.name))}</div>
           <div><b>${esc(s.profile.name)}</b><span class="ach-meta">${a.past ? '<span class="ach-past">★ From your experience</span> · ' : ''}${esc(a.year || fmtDate(a.date))} · ${esc(label(a.track))}</span></div></header>
         <p class="ach-text">${esc(a.text)}</p>
         ${t ? `<div class="ach-match" data-id="${t.id}">
@@ -176,7 +176,7 @@
     }).join('');
   }
 
-  async function render() { await JourneyLib.ready; renderComposer(); renderFeed(); }
+  async function render() { await JourneyLib.ready; renderComposer(); renderFeed(); window.refreshMyAvatars && refreshMyAvatars(); }
   window.renderAchievements = render;
   window.addEventListener('jstore', e => { if (['profile', 'achievements', 'reset'].includes(e.detail.what)) render(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else setTimeout(render);

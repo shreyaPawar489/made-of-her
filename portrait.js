@@ -234,6 +234,45 @@
     mount('bigPortrait', 'bigPortrait');
   }
   window.mountPortraits = mountFromStore;
+
+  // ---------- profile pictures = your mosaic ----------
+  // Any element with [data-my-avatar] shows the current snapshot of your portrait (falls back to its text, e.g. initials).
+  function refreshMyAvatars() {
+    const src = [window.avatarPortrait, window.bigPortrait].find(x => x && typeof x.snapshot === 'function' && x._canvas && x._canvas.width);
+    if (!src) return;
+    src.ready.then(() => apply(src));
+  }
+  function apply(src) {
+    let url; try { url = src.snapshot(144); } catch (e) { return; }
+    document.querySelectorAll('[data-my-avatar]').forEach(el => {
+      if (el.tagName === 'IMG') el.src = url;
+      else { el.style.backgroundImage = 'url(' + url + ')'; el.classList.add('has-mosaic'); }
+    });
+  }
+  window.refreshMyAvatars = refreshMyAvatars;
+  const refreshSoon = () => [120, 900, 2600].forEach(ms => setTimeout(refreshMyAvatars, ms)); // after pop-in animation settles
+  window.addEventListener('jstore', e => { if (['profile', 'achievements', 'reset'].includes(e.detail.what)) refreshSoon(); });
+  setTimeout(refreshSoon, 300);
+
+  // Members without a portrait (e.g. sample members): a small mosaic of real women from their path, filled to their %.
+  const memberCache = new Map();
+  Lib.memberAvatar = (m, size = 88) => {
+    const key = (m.id || m.name) + '|' + (m.track || '') + '|' + (m.pct || 0);
+    if (memberCache.has(key)) return memberCache.get(key);
+    if (!Lib.atlas) return null;
+    const cands = Lib.candidates(m.track || 'law'); if (!cands.length) return null;
+    let h = 2166136261; for (const ch of String(m.id || m.name || '')) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+    const rand = () => ((h = Math.imul(h ^ (h >>> 13), 1274126177)) >>> 0) / 4294967296;
+    const N = 5, cs = size / N, c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d'), filled = Math.max(6, Math.round((m.pct || 30) / 100 * N * N));
+    const order = Array.from({ length: N * N }, (_, i) => i).sort(() => rand() - 0.5);
+    order.forEach((cell, k) => {
+      const x = (cell % N) * cs, y = ((cell / N) | 0) * cs;
+      Lib.drawTile(g, cands[(rand() * cands.length) | 0], x, y, cs, cs);
+      if (k >= filled) { g.fillStyle = 'rgba(232,222,212,.82)'; g.fillRect(x, y, cs, cs); }
+    });
+    const url = c.toDataURL('image/jpeg', 0.8); memberCache.set(key, url); return url;
+  };
   window.addEventListener('jstore', e => { if (['profile', 'achievements', 'reset'].includes(e.detail.what)) mountFromStore(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountFromStore); else setTimeout(mountFromStore);
 })();
