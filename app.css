@@ -138,6 +138,8 @@ textarea.input { min-height: 140px; resize: vertical; }
 .person .who { flex: 1; min-width: 0; }
 .person .who b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .person .who small { color: var(--muted); font-size: 12px; display: block; }
+.person .who small.sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.person .who small.sent { color: var(--plum); font-weight: 600; margin-top: 2px; }
 .person .note { font-size: 13px; margin-top: 4px; font-style: italic; color: var(--ink); }
 .net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .net-grid .card.full { grid-column: 1 / -1; }

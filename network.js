@@ -121,12 +121,13 @@
     if (!c) main = `<button class="btn small" data-connect="${m.id}">Connect</button>`;
     else if (c.status === 'accepted') return `<div class="acts">${msgBtn(m, true)}</div>`;
     else if (c.to_id === myId()) main = `<button class="btn small coral" data-accept="${c.id}">Accept</button>`;
-    else main = '<span class="pill">Pending</span>';
+    else return `<div class="acts">${msgBtn(m)}</div>`; // request sent: shown as a line under her name
     return `<div class="acts">${main}${msgBtn(m)}</div>`;
   }
   function person(m, extra) {
+    const c = connWith(m.id), sent = c && c.status !== 'accepted' && c.to_id !== myId();
     return `<div class="person" data-member="${m.id}"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
-      <small>${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${extra || ''}</div>${action(m)}</div>`;
+      <small class="sub">${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${sent ? '<small class="sent">Request sent</small>' : ''}${extra || ''}</div>${action(m)}</div>`;
   }
 
   function renderCard() {
