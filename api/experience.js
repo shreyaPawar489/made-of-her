@@ -61,8 +61,8 @@ module.exports = async (req, res) => {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL, max_tokens: 900, system: SYSTEM,
-        tools: [TOOL], tool_choice: { type: 'tool', name: TOOL.name },
+        model: MODEL, max_tokens: 4000, system: SYSTEM + '\n\nAlways respond by calling the ' + TOOL.name + ' tool exactly once. Do not reply with plain text.',
+        tools: [TOOL], tool_choice: { type: 'auto' }, output_config: { effort: 'low' },
         messages: [{ role: 'user', content: user }]
       })
     });

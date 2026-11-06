@@ -100,15 +100,15 @@ module.exports = async (req, res) => {
   const messages = cleanMessages(b.messages, !!b.kickoff, firstName);
   if (!messages) return res.status(400).json({ error: 'no user message' });
 
-  const system = `${SYSTEM}\n\n--- MEMBER PROFILE ---\n${profileText(b.profile)}\n\n--- HER PROGRESS ---\n${history(b.achievements, b.steps)}`;
+  const system = `${SYSTEM}\n\n--- MEMBER PROFILE ---\n${profileText(b.profile)}\n\n--- HER PROGRESS ---\n${history(b.achievements, b.steps)}\n\nAlways respond by calling the ${TOOL.name} tool exactly once. Do not reply with plain text.`;
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL, max_tokens: 900, system,
-        tools: [TOOL], tool_choice: { type: 'tool', name: TOOL.name },
+        model: MODEL, max_tokens: 4000, system,
+        tools: [TOOL], tool_choice: { type: 'auto' }, output_config: { effort: 'low' },
         messages
       })
     });
