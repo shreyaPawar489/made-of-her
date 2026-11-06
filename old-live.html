@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0710">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Made of Her</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="mosaic"></canvas>
+  <video id="video" playsinline muted autoplay></video>
+
+  <!-- Start screen -->
+  <section id="start">
+    <div class="start-inner">
+      <p class="eyebrow">Every pixel is a real woman</p>
+      <h1>Made of Her</h1>
+      <p class="tagline">AI that points you back to real people. See yourself built from thousands of women who changed history and are changing it now. Tap any pixel to meet her.</p>
+      <button id="startBtn" class="primary">Turn on camera</button>
+      <p class="fineprint">Scene matching sends a small snapshot from your camera to Claude every few seconds to recognise where you are. Nothing is saved. You can turn it off once the camera is on.</p>
+      <p id="libStatus" class="status">Loading library…</p>
+      <p id="camError" class="error" hidden></p>
+    </div>
+  </section>
+
+  <!-- Top bar -->
+  <header id="topbar" hidden>
+    <span class="brand">Made of Her</span>
+    <span id="count" class="pill"></span>
+  </header>
+
+  <!-- Relevance: auto scene matching + near me -->
+  <section id="relevance" hidden>
+    <button id="sceneBtn" class="toggle on" title="The mosaic favors women who fit the place behind you. Tap to turn off.">✨ Scene: looking…</button>
+    <button id="nearMeBtn" class="toggle" title="Uses your location in your browser only; it is never sent anywhere">📍 Women near me</button>
+  </section>
+
+  <!-- Controls -->
+  <nav id="controls" hidden>
+    <label>Tiles <input id="tileSize" type="range" min="6" max="40" value="22"></label>
+    <label>Image <input id="strength" type="range" min="0" max="80" value="40"></label>
+    <select id="mode" aria-label="Blend mode">
+      <option value="tint">Tint</option>
+      <option value="color">Color</option>
+      <option value="ghost">Ghost</option>
+    </select>
+    <button id="rotateBtn" class="toggle on" title="Slowly rotate which women appear">Rotate</button>
+    <button id="freezeBtn" class="primary small">Freeze</button>
+    <button id="flipBtn" title="Switch camera">Flip</button>
+    <button id="statsBtn" class="toggle">Stats</button>
+  </nav>
+
+  <p id="hint" hidden>Scroll or pinch to zoom in · Tap a face to meet her</p>
+  <button id="flipFab" class="fab" hidden aria-label="Switch camera">⟲</button>
+  <button id="menuFab" class="fab" hidden aria-label="Show controls">☰</button>
+
+  <!-- Story card -->
+  <aside id="card" hidden>
+    <button id="cardClose" class="icon" aria-label="Close">×</button>
+    <div id="frameBanner" class="banner"></div>
+    <div class="card-body">
+      <img id="cardImg" alt="">
+      <div>
+        <span id="cardBadge" class="badge"></span>
+        <h2 id="cardName"></h2>
+        <p id="cardMeta" class="meta"></p>
+        <p id="cardDesc"></p>
+        <a id="cardLink" target="_blank" rel="noopener">Read more →</a>
+      </div>
+    </div>
+    <div id="cardMemoWrap" hidden>
+      <p id="cardMemo"></p>
+      <p id="cardImpact"></p>
+      <p id="cardCredit" class="credit"></p>
+    </div>
+    <p class="also">Also in this frame:</p>
+    <div id="chips" class="chips"></div>
+    <div class="card-actions">
+      <button id="keepBtn">Keep exploring</button>
+      <button id="liveBtn" class="primary">Back to live</button>
+    </div>
+  </aside>
+
+  <!-- Stats -->
+  <aside id="stats" hidden>
+    <div id="statsText"></div>
+    <p class="gaps-label">Need more photos in these colors:</p>
+    <div id="gaps" class="gaps"></div>
+    <button id="exportBtn" class="small">Download library pack</button>
+    <button id="rebuildBtn" class="small">Rebuild from Wikidata</button>
+  </aside>
+
+  <script src="engine.js"></script>
+  <script src="relevance.js"></script>
+  <script src="mock/fake-library.js"></script>
+  <script src="builder.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
