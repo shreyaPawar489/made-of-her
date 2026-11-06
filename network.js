@@ -86,19 +86,25 @@
   }
 
   // ---------- matching ----------
+  // ---------- same company / school ----------
+  // Members whose role names the same place as mine ("Research engineer at Anthropic" ~ "Researcher @ Anthropic PBC").
+  const myOrg = () => (window.JourneyMatch ? JourneyMatch.orgOf((me().profile || {}).role) : null);
+  const orgMatch = m => !!(m && m.id !== myId() && window.JourneyMatch && JourneyMatch.sameOrg(myOrg(), JourneyMatch.orgOf(m.role)));
+
   function onYourPath() {
     const p = me().profile || {};
     const myTracks = new Set([p.track].concat(p.interests || []).filter(Boolean));
     const years = +p.years || 0, group = GROUP[p.stage] || 'student';
     const onTrack = x => myTracks.has(x.track) || (x.interests || []).some(i => myTracks.has(i));
-    const score = x => (x.track === p.track ? 2 : 0) + (onTrack(x) ? 1 : 0) + (x.is_sample ? 0 : 0.5);
+    const score = x => (orgMatch(x) ? 4 : 0) + (x.track === p.track ? 2 : 0) + (onTrack(x) ? 1 : 0) + (x.is_sample ? 0 : 0.5); // same company ranks first
     const sorted = arr => arr.sort((a, b) => score(b) - score(a));
     let mentors = sorted(members.filter(x => x.open_to_mentor && (+x.years || 0) >= years + 5 && onTrack(x)));
     if (!mentors.length) mentors = sorted(members.filter(x => x.open_to_mentor && (+x.years || 0) >= years + 5));
     const peers = sorted(members.filter(x => (GROUP[x.stage] || 'student') === group && onTrack(x) && !mentors.includes(x)));
     const mentees = p.openToMentor && group === 'experienced'
       ? sorted(members.filter(x => (+x.years || 0) + 5 <= years && onTrack(x))) : [];
-    return { mentors, peers, mentees };
+    const company = sorted(members.filter(orgMatch));
+    return { mentors, peers, mentees, company };
   }
 
   function connWith(id) { return conns.find(c => c.from_id === id || c.to_id === id) || null; }
@@ -128,14 +134,15 @@
   function person(m, extra) {
     const c = connWith(m.id), sent = c && c.status !== 'accepted' && c.to_id !== myId();
     return `<div class="person" data-member="${m.id}"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
-      <small class="sub">${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${sent ? '<small class="sent">Request sent</small>' : ''}${extra || ''}</div>${action(m)}</div>`;
+      <small class="sub">${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${orgMatch(m) ? `<small class="co">Also at ${esc((myOrg() || {}).name || 'your company')}</small>` : ''}${sent ? '<small class="sent">Request sent</small>' : ''}${extra || ''}</div>${action(m)}</div>`;
   }
 
   function renderCard() {
     const el = $('onYourPath'); if (!el || !me().profile) return;
     if (!db()) { el.innerHTML = '<h3>Women on your path</h3><p class="empty">The network is offline right now.</p>'; return; }
-    const { mentors, peers, mentees } = onYourPath();
-    const list = (mentees.length ? mentees.slice(0, 2) : mentors.slice(0, 2)).concat(peers.slice(0, 2));
+    const { mentors, peers, mentees, company } = onYourPath();
+    const seen = new Set(), list = company.slice(0, 2).concat(mentees.length ? mentees.slice(0, 2) : mentors.slice(0, 2)).concat(peers.slice(0, 2))
+      .filter(m => !seen.has(m.id) && seen.add(m.id)).slice(0, 4);
     el.innerHTML = `<h3>${mentees.length ? 'Women you could mentor' : 'Women on your path'}</h3>` +
       (list.length ? list.map(m => person(m)).join('') : '<p class="empty">No one on your path yet. You\'re the first!</p>') +
       '<a href="#network" style="font-size:13px;font-weight:600;text-decoration:none">See your network →</a>';
@@ -150,7 +157,8 @@
   function renderPage() {
     const el = $('network'); if (!el || !me().profile) return;
     if (!db()) { el.innerHTML = '<div class="card"><p class="empty">The network is offline right now.</p></div>'; return; }
-    const { mentors, peers, mentees } = onYourPath();
+    const { mentors, peers, mentees, company } = onYourPath();
+    const org = myOrg();
     const reqs = conns.filter(c => c.to_id === myId() && c.status === 'pending');
     const mine = conns.filter(c => c.status === 'accepted').map(c => memberById(c.from_id === myId() ? c.to_id : c.from_id)).filter(Boolean);
     const sent = conns.filter(c => c.from_id === myId() && c.status === 'pending').map(c => memberById(c.to_id)).filter(Boolean);
@@ -166,6 +174,8 @@
         'No requests right now.', 'full') +
       (msgsOn ? section('Messages', conversations().map(({ m, last }) => person(m, `<div class="note">${last.from_id === myId() ? 'You: ' : ''}${esc(last.body.replace(/https:\/\/meet\.jit\.si\/\S+/g, '📹 video chat link').slice(0, 80))}</div>`)),
         'No messages yet. You can message any woman here, connected or not.', 'full') : '') +
+      (org ? section('Women at ' + esc(org.name), company.slice(0, 8).map(m => person(m)),
+        `You're the first from ${esc(org.name)} here. Invite a colleague, or search by name.`, 'full') : '') +
       (mentees.length ? section('Women you could mentor', mentees.slice(0, 8).map(m => person(m)), '') : '') +
       section('Mentors on your path', mentors.slice(0, 8).map(m => person(m)), 'No mentors on your path yet.') +
       section('Peers at your stage', peers.slice(0, 8).map(m => person(m)), 'No peers yet. Invite a friend!') +

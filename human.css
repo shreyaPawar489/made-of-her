@@ -48,3 +48,5 @@ body { background: var(--bg); }
 .ach-list li.clickable:focus-visible { box-shadow: 0 0 0 2px var(--plum); }
 .ach-go { margin-left: auto; align-self: center; color: var(--plum); font-weight: 700; opacity: .55; padding: 0 6px; }
 .ach-list li.clickable:hover .ach-go { opacity: 1; }
+
+.person .co { color: var(--plum); font-weight: 600; }

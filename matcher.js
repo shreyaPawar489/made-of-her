@@ -37,6 +37,7 @@
 
   // concept map: if the member's text contains any trigger, also search for these words (weighted lower than her own words)
   const CONCEPTS = [
+    [/anthropic|openai|deepmind|\\bai (lab|research|safety)|hugging ?face|cohere/, 'artificial intelligence machine learning computer scientist research software'],
     [/machine learning|deep learning|neural|artificial intelligence|\bai\b|\bml\b|data scien|algorithm|\bnlp\b/, 'artificial intelligence computer science algorithm software programmer data researcher'],
     [/code|coding|program|software|developer|hackathon|\bapp\b|website|github|cyber/, 'computer programmer software developer engineer computing'],
     [/research|lab\b|experiment|thesis|publish|paper|journal|study|studies/, 'research professor study published'],
@@ -60,6 +61,22 @@
     [/climate|environment/, 'environmental climate ecologist conservation']
   ];
 
+  // ---------- employer / school ----------
+  // "Research engineer at Anthropic" -> { name: "Anthropic", key: "anthropic" }. Used to link people at the same place.
+  const ORG_SUFFIX = /\b(inc|llc|ltd|plc|pbc|corp|corporation|co|company|labs?|technologies|technology|group|the)\b\.?/g;
+  function orgOf(role) {
+    const r = String(role || '').trim(); if (!r) return null;
+    let m = r.match(/(?:\bat|@|\bfor|\bwith)\s+([^,;|()·–—]+)/i);
+    let name = m ? m[1] : null;
+    if (!name) { const parts = r.split(/\s*[,·|–—]\s*|\s-\s/); if (parts.length > 1 && /^[A-Z0-9]/.test(parts[parts.length - 1])) name = parts[parts.length - 1]; }
+    if (!name) return null;
+    name = name.trim().replace(/[.\s]+$/, '');
+    const key = name.toLowerCase().replace(/&/g, ' and ').replace(ORG_SUFFIX, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+    return key.length >= 2 ? { name, key } : null;
+  }
+  const myOrg = () => { try { return orgOf((window.JStore && window.JStore.get().profile || {}).role); } catch (e) { return null; } };
+  const sameOrg = (a, b) => { const x = typeof a === 'string' ? orgOf(a) : a, y = typeof b === 'string' ? orgOf(b) : b; return !!(x && y && (x.key === y.key)); };
+
   let idx = null;
   const forms = new Map(); // stem -> { word: count } so connecting words display as real words, not stems
   function note(text) { for (const w of String(text || '').toLowerCase().match(/[a-z][a-z'-]*[a-z]/g) || []) { if (STOP.has(w)) continue; const st = stem(w), m = forms.get(st) || {}; m[w] = (m[w] || 0) + 1; forms.set(st, m); } }
@@ -78,12 +95,20 @@
     idx = { docs, df, N: docs.length, avg: total / Math.max(1, docs.length) };
   }
 
-  function queryTerms(text) {
+  // her employer / school as search terms: its exact name in a biography is a strong signal
+  function orgTerms(org) {
+    const q = new Map(); if (!org || !org.name) return q;
+    for (const w of tokens(org.name)) q.set(w, 1.8);
+    for (const w of phraseKeys(org.name)) q.set(w, 2.4);
+    return q;
+  }
+  function queryTerms(text, org) {
     const lower = String(text || '').toLowerCase(), q = new Map();
     const own = tokens(text);
     for (const w of own) q.set(w, Math.max(q.get(w) || 0, GENERIC.has(w) ? 0.2 : 1));   // filler like "team" or "join" barely counts
     for (const w of phraseKeys(text)) q.set(w, 1.4);
-    for (const [rx, words] of CONCEPTS) if (rx.test(lower)) for (const w of tokens(words)) if (!q.has(w)) q.set(w, 0.4);
+    if (org && org.name) for (const [w, wt] of orgTerms(org)) q.set(w, Math.max(q.get(w) || 0, wt));   // (explain() only)
+    for (const [rx, words] of CONCEPTS) if (rx.test(lower + ' ' + String((org && org.name) || '').toLowerCase())) for (const w of tokens(words)) if (!q.has(w)) q.set(w, 0.4);
     return q;
   }
 
@@ -91,15 +116,22 @@
     if (!idx) build();
     const L = window.JourneyLib; if (!idx || !L) return [];
     const k = opts.k || 30, exclude = opts.exclude || new Set(), fields = new Set(L.fieldsFor ? L.fieldsFor(track) : []);
-    const q = queryTerms(text), k1 = 1.2, b = 0.75, out = [];
-    for (const d of idx.docs) {
-      if (exclude.has(d.t.id)) continue;
+    const q = queryTerms(text), qo = orgTerms(opts.org !== undefined ? opts.org : myOrg()), k1 = 1.2, b = 0.75, out = [];
+    const bm25 = (d, qq) => {
       let s = 0;
-      for (const [w, wt] of q) {
+      for (const [w, wt] of qq) {
         const f = d.tf.get(w); if (!f) continue;
         const idf = Math.log(1 + (idx.N - (idx.df.get(w) || 0) + 0.5) / ((idx.df.get(w) || 0) + 0.5));
         s += wt * idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * d.len / idx.avg));
       }
+      return s;
+    };
+    for (const d of idx.docs) {
+      if (exclude.has(d.t.id)) continue;
+      const sT = bm25(d, q), sO = qo.size ? bm25(d, qo) : 0;
+      // her employer BOOSTS women who already fit what she did (x1.6) and adds only a little on its own, so a swim-team
+      // step doesn't fill up with her company's executives
+      let s = sT * (sO > 0 ? 1.6 : 1) + 0.25 * sO;
       if (fields.size && fields.has(d.t.field)) s = s * 1.25 + 0.4;   // her track is a soft boost, not a filter
       out.push({ t: d.t, s });
     }
@@ -108,10 +140,12 @@
   }
 
   // the words that actually connect her text and a woman's biography (for an honest explanation)
-  function explain(text, tile) {
+  function explain(text, tile, org) {
     if (!idx) build(); if (!idx || !tile) return [];
-    const q = queryTerms(text), d = idx.docs.find(x => x.t.id === tile.id); if (!d) return [];
+    const q = queryTerms(text, org !== undefined ? org : myOrg()), d = idx.docs.find(x => x.t.id === tile.id); if (!d) return [];
     const raw = new Map(); for (const w of String(text || '').toLowerCase().match(/[a-z][a-z'-]*[a-z]/g) || []) raw.set(stem(w), w.replace(/'s$/, ''));
+    const o2 = org !== undefined ? org : myOrg();
+    if (o2 && o2.name) for (const w of String(o2.name).match(/[A-Za-z][A-Za-z'-]*[A-Za-z]/g) || []) raw.set(stem(w.toLowerCase()), w);   // keep her employer's capitalisation
     const show = st => raw.get(st) || surface(st);
     const generic = GENERIC;
     const hit = [...q.keys()].filter(w => d.tf.has(w));
@@ -124,5 +158,5 @@
       .concat(singles.sort(order).map(show)).slice(0, 3);
   }
 
-  window.JourneyMatch = { rank, explain, tokens, ready: (window.JourneyLib && window.JourneyLib.ready ? window.JourneyLib.ready.then(build) : Promise.resolve()) };
+  window.JourneyMatch = { rank, explain, tokens, orgOf, sameOrg, myOrg, ready: (window.JourneyLib && window.JourneyLib.ready ? window.JourneyLib.ready.then(build) : Promise.resolve()) };
 })();
