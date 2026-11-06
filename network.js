@@ -14,9 +14,11 @@
   const myId = () => me().memberId;
 
   // ---------- upsert me ----------
-  function upsertMe() {
+  async function upsertMe() {
     const s = me(), p = s.profile;
-    if (!p || !p.shareInNetwork || !db()) return Promise.resolve(null);
+    if (!p || !p.shareInNetwork || !db()) return null;
+    // wait for the portrait to draw, or the snapshot is a black square
+    if (window.avatarPortrait && avatarPortrait.ready) await Promise.race([avatarPortrait.ready, new Promise(r => setTimeout(r, 3000))]).catch(() => {});
     const pr = (window.App && App.progress) ? App.progress() : { pct: 0, women: 0 };
     let avatar = null;
     try { if (window.avatarPortrait && avatarPortrait.snapshot) avatar = avatarPortrait.snapshot(96); } catch (e) { /* not ready */ }
@@ -71,6 +73,7 @@
     return [m.role, STAGE_LABEL[m.stage] || m.stage, (+m.years ? m.years + ' yrs exp' : ''), m.city].filter(Boolean).join(' · ');
   }
   function avatar(m) {
+    if (!m.avatar && window.JourneyLib && JourneyLib.memberAvatar) { const u = JourneyLib.memberAvatar(m); if (u) return `<img alt="" src="${u}" title="${esc(cleanName(m.name))}'s mosaic">`; }
     return m.avatar ? `<img alt="" src="${esc(m.avatar)}">` : `<div class="ph" style="display:grid;place-items:center;font-weight:600;color:var(--plum)">${esc(cleanName(m.name).slice(0, 1))}</div>`;
   }
   function action(m) {
@@ -156,6 +159,7 @@
     if (started) { load(); return; }
     started = true;
     upsertMe().then(load);
+    if (window.JourneyLib && JourneyLib.ready) JourneyLib.ready.then(() => { renderCard(); if ($('network') && !$('network').hidden) renderPage(); });
     pollT = setInterval(load, 20000);
   }
   window.addEventListener('jstore', e => {

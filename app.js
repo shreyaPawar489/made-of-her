@@ -72,10 +72,9 @@
       '<div class="progress"><div class="bar"><i style="width:' + pr.pct + '%"></i></div>' +
       '<div class="lbl"><b>' + pr.pct + '%</b> made of her · ' + pr.women + ' women</div></div>' +
       (p.goal ? '<div class="goal"><span class="muted">Where I\'m going</span><br>' + esc(p.goal) + '</div>' : '');
-    // nav avatar = portrait snapshot
-    if (window.avatarPortrait && avatarPortrait.snapshot) {
-      try { $('navAvatar').innerHTML = '<img alt="" src="' + avatarPortrait.snapshot(72) + '">'; } catch (e) { /* not ready */ }
-    }
+    // nav avatar = portrait snapshot (kept fresh by portrait.js refreshMyAvatars)
+    if (!$('navAvatar').firstChild) $('navAvatar').innerHTML = '<img alt="" data-my-avatar>';
+    window.refreshMyAvatars && refreshMyAvatars();
   }
   App.renderProfile = renderProfile;
 

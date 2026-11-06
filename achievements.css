@@ -47,3 +47,6 @@
   .ach-modal { border-radius: 16px 16px 0 0; max-height: 92vh; }
 }
 @keyframes achFade { from { opacity: 0; } }
+
+/* profile picture = your mosaic portrait */
+.ach-av.has-mosaic { background: center / cover no-repeat; color: transparent; border-radius: 10px; }
