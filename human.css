@@ -15,7 +15,9 @@ body { background: var(--bg); }
 /* profile banner: a strip of real women, not a gradient */
 #profileCard::before { height: 64px; background: var(--plum); }
 .has-faces #profileCard::before { background: var(--faces-strip) left top / auto 100% repeat-x; filter: saturate(.85); }
-#avatar { border-radius: 8px; }
+/* portrait sits ABOVE the faces strip (the strip's filter creates a stacking context that would cover it) and is big
+   enough that its 40x40 tiles read as a mosaic, not noise */
+#avatar { border-radius: 8px; position: relative; z-index: 1; width: min(200px, calc(100% - 40px)); height: auto; aspect-ratio: 1 / 1; margin-top: -48px; }
 .progress .bar { height: 6px; border-radius: 3px; }
 .progress .bar i { background: var(--plum); border-radius: 3px; }
 /* onboarding: plain paper, a wall of faces on the left on wide screens */
