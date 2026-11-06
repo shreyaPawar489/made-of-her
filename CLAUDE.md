@@ -3,6 +3,7 @@
 ## 0. STATUS (updated ~10:26) — v1 is BUILT and working
 Team: **P1 Engine = Shreya · P2 Data = Emma · P3 UI + pitch = Niranjan.**
 Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `builder.js`, `mock/fake-library.js`, `data/headlines.json`.
+- **LIVE (HTTPS, works on phones): https://made-of-her-83ve.vercel.app** — Vercel auto-deploys every push to `main` in ~10 s. Test phone changes there.
 - Run: `python3 -m http.server 8000` → http://localhost:8000 (dev with fake tiles: `?fake=1`).
 - **The photo library builds itself in the browser** on first load (`builder.js`: Wikidata → Wikimedia thumbnails → atlas), shows progress, and caches in IndexedDB. `?rebuild=1` forces a rebuild.
 - Stats panel (press **D**) → **Download library pack** saves `atlas.jpg` + `tiles.json`. Put them in `library/` and commit → app loads instantly/offline (demo safety). Priority order at load: `library/` → IndexedDB cache → live build.
