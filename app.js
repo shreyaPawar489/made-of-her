@@ -6,6 +6,9 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const STAGES = { high_school: 'High school', college: 'College', early: 'Early career', mid: 'Mid career', senior: 'Senior', returning: 'Returning to work', switching: 'Switching careers' };
   const App = { esc, STAGES, tracks: null };
+  // canvas#bigPortrait is auto-exposed as window.bigPortrait by the browser; portrait.js stores its instance there, so clear the element alias.
+  if (window.bigPortrait instanceof Element) window.bigPortrait = null;
+  if (window.avatarPortrait instanceof Element) window.avatarPortrait = null;
   window.App = App;
 
   // tracks.json labels (for "Law", "Medicine & health", …)
@@ -34,7 +37,8 @@
   App.subline = subline;
 
   function progress() {
-    const p = window.avatarPortrait && avatarPortrait.progress ? avatarPortrait.progress() : null;
+    const src = [window.avatarPortrait, window.bigPortrait].find(x => x && x.progress && x.progress().achievements);
+    const p = src ? src.progress() : null;
     return p || { pct: 0, women: 0 };
   }
   App.progress = progress;
@@ -46,7 +50,7 @@
     const tab = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
     PAGES.forEach(p => { $(p).hidden = p !== tab; });
     document.querySelectorAll('.tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
-    if (tab === 'me') renderMe();
+    if (tab === 'me') { renderMe(); (window.JourneyLib ? JourneyLib.ready : Promise.resolve()).then(() => setTimeout(renderMe, 400)); }
     if (tab === 'network' && window.Network && Network.renderPage) Network.renderPage();
     window.scrollTo(0, 0);
     // canvases inside hidden pages have 0 size; redraw once visible
@@ -75,9 +79,7 @@
 
   // composer + feed fallbacks (achievements.js owns these when it exists)
   function renderComposerFallback() {
-    if (window.openAchievementComposer && $('composer').childElementCount) return;
-    if ($('composer').dataset.p3 && $('composer').childElementCount) return;
-    $('composer').dataset.p3 = '1';
+    if (window.renderAchievements) { renderAchievements(); return; }
     $('composer').innerHTML = '<div class="composer-fake"><button type="button" id="composerBtn">Log an achievement… what did you do today?</button></div>';
     $('composerBtn').onclick = () => window.openAchievementComposer ? openAchievementComposer({}) : App.toast('Achievements are loading…');
   }
@@ -122,7 +124,7 @@
   // ---------- show the app ----------
   App.shown = false;
   window.showApp = function () {
-    $('onboarding').hidden = true;
+    $('onboarding').hidden = true; document.body.classList.remove('onboarding');
     $('nav').hidden = false; $('app').hidden = false;
     App.shown = true;
     renderComposerFallback();
