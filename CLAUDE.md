@@ -1,6 +1,6 @@
 # Made of Her — Dev Doc (read this first)
 
-## 0. STATUS (updated ~10:50) — v1 is BUILT and working
+## 0. STATUS (updated ~10:26) — v1 is BUILT and working
 Team: **P1 Engine = Shreya · P2 Data = Emma · P3 UI + pitch = Niranjan.**
 Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `builder.js`, `mock/fake-library.js`, `data/headlines.json`.
 - Run: `python3 -m http.server 8000` → http://localhost:8000 (dev with fake tiles: `?fake=1`).
@@ -9,7 +9,7 @@ Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `bui
 - So the Python pipeline in §7 is **optional/not needed**; §7 now describes what `builder.js` does.
 
 ### Remaining tasks (do these, in order)
-**Shreya (P1, engine.js):** ✅ (~10:50) engine faster (cached tile layer, dpr≤1.5), default tileSize 22, magnifier circle replaced by smooth zoom (scroll/pinch/double-click, drag to pan) + square hover label; control bar hidden by default (press **S**). New Mosaic API (additive): `zoomAt(x,y,f)`, `panBy(dx,dy)`, `resetView()`, `zoom()`. Next: test on real camera, deploy to GitHub Pages, phone test.
+**Shreya (P1, engine.js):** ✅ (~10:50) engine faster (cached tile layer, dpr≤1.5), default tileSize 22, magnifier circle replaced by smooth zoom (scroll/pinch/double-click, drag to pan) + square hover label; control bar hidden by default (press **S**). New Mosaic API (additive): `zoomAt(x,y,f)`, `panBy(dx,dy)`, `resetView()`, `zoom()`. ✅ (~10:26) less repetition (K=16 + no identical neighbors), freeze survives resize/rotate, zoom-out snap. Known: double-click on desktop also opens the card (ui.js, Niranjan). Next: test on real camera, deploy to GitHub Pages, phone test.
 **Emma (P2, builder.js + data/):** ✅ DONE (~10:30): library built (2,056 tiles) and committed to `library/`, portraits checked, headlines fact-checked (Tennessee governor updated: Blackburn won). Remaining: optional extra photos for saturated blue/red gap colors (not skin tones, low priority).
 **Niranjan (P3, ui.js/style.css + pitch):** ✅ phone polish done (~11:00): start screen, controls bar (2-row grid on phones), story card = bottom sheet; new ☰ button opens controls on touch devices (S key still works on desktop); checked at 320px and 375px, no overlaps. Next: deck + demo-video script after 11:45; record demo by 12:00.
 
