@@ -1,6 +1,6 @@
 -- db/messages.sql (P1) — direct messages between ANY two members (connected or not).
--- NOT YET APPLIED: run once in the Supabase SQL editor (project mbwjeoqpppwltixmxely). Additive: nothing existing changes.
--- network.js shows "Messaging isn't switched on yet" until this table exists.
+-- APPLIED 2026-11-06 as migration "messages" (project mbwjeoqpppwltixmxely). Kept here to recreate the DB.
+-- network.js shows "Messaging isn't switched on yet" if this table is ever missing.
 create table public.messages (
   id bigserial primary key,
   from_id uuid not null references public.members(id),
