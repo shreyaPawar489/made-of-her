@@ -25,12 +25,24 @@
   }
 
   // ---------- matching ----------
+  // Prefer women from the track's main field (law -> Lawyer) and the best-documented ones (longer Wikipedia intro),
+  // so matches read as "of course" rather than random.
   function candidatesFor(track, exclude) {
-    const all = JourneyLib.candidates(track).filter(t => !exclude.has(t.id));
-    const withMemo = all.filter(t => t.memo), rest = all.filter(t => !t.memo);
-    return shuffle(withMemo).concat(shuffle(rest)).slice(0, 30);
+    const all = JourneyLib.candidates(track).filter(t => !exclude.has(t.id) && t.memo);
+    const main = (JourneyLib.fieldsFor(track) || [])[0];
+    const byFame = arr => arr.sort((a, b) => b.memo.length - a.memo.length);
+    const primary = shuffle(byFame(all.filter(t => t.field === main)).slice(0, 30)).slice(0, 20);
+    const other = shuffle(byFame(all.filter(t => t.field !== main)).slice(0, 20)).slice(0, 10);
+    const out = primary.concat(other);
+    return out.length ? out : shuffle(JourneyLib.candidates(track).filter(t => !exclude.has(t.id))).slice(0, 30);
   }
-  function localReason(t) { return `${t.name}${t.year ? ' (b. ' + t.year + ')' : ''}: ${t.desc || t.field}.`; }
+  // Fallback when /api/match is unavailable: her own first sentence from Wikipedia, cleaned up.
+  function localReason(t) {
+    let s = String(t.memo || '').replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    s = (s.match(/^.*?[a-z]{2}\.(\s|$)/) || [s])[0].trim();
+    if (s.length > 180) s = s.slice(0, 177).replace(/\s+\S*$/, '') + '…';
+    return s || `${t.name}: ${t.desc || t.field}.`;
+  }
 
   // items: [{key, achievement, track}] -> Map key -> {womanId, reason}
   async function matchAll(items) {
@@ -161,19 +173,29 @@
       $('button', el).onclick = () => openAchievementComposer({});
       return;
     }
-    el.innerHTML = list.map(a => {
+    // A personal timeline, not a social feed: when, what you did, and the woman who did it first.
+    const item = a => {
       const t = JourneyLib.tile(a.womanId);
-      return `<article class="ach-card ach-post">
-        <header><div class="ach-av">${esc(initials(s.profile.name))}</div>
-          <div><b>${esc(s.profile.name)}</b><span class="ach-meta">${a.past ? '<span class="ach-past">★ From your experience</span> · ' : ''}${esc(a.year || fmtDate(a.date))} · ${esc(label(a.track))}</span></div></header>
-        <p class="ach-text">${esc(a.text)}</p>
-        ${t ? `<div class="ach-match" data-id="${t.id}">
-          <img alt="" src="${JourneyLib.thumb(t, 112)}">
-          <div><span class="ach-match-k">Matched with</span><b>${esc(t.name)}</b><span class="ach-meta">${esc([t.field, t.year].filter(Boolean).join(' · '))}</span>
-          <p>${esc(a.reason || '')}</p>${t.link ? `<a href="${esc(t.link)}" target="_blank" rel="noopener">Read her story ↗</a>` : ''}</div>
-        </div>` : ''}
-      </article>`;
-    }).join('');
+      const when = a.past ? (a.year || 'Before') : fmtDate(a.date).replace(/, \d{4}$/, '');
+      return `<li class="tl-item${a.past ? ' tl-past' : ''}">
+        <div class="tl-when">${esc(when)}</div>
+        <div class="tl-body">
+          <p class="tl-text">${esc(a.text)}</p>
+          ${t ? `<div class="tl-her">
+            <img alt="" src="${JourneyLib.thumb(t, 112)}">
+            <div><b>${esc(t.name)}</b>
+              <p>${esc(a.reason || '')}</p>
+              ${t.link ? `<a href="${esc(t.link)}" target="_blank" rel="noopener">Her story ↗</a>` : ''}</div>
+          </div>` : ''}
+        </div>
+      </li>`;
+    };
+    const now = list.filter(a => !a.past), past = list.filter(a => a.past);
+    el.innerHTML = `<section class="ach-card tl">
+      <h3 class="tl-h">Your path <span>${list.length} steps · ${new Set(list.map(a => a.womanId)).size} women</span></h3>
+      ${now.length ? `<ol class="tl-list">${now.map(item).join('')}</ol>` : ''}
+      ${past.length ? `<h4 class="tl-sub">Before you joined</h4><ol class="tl-list">${past.map(item).join('')}</ol>` : ''}
+    </section>`;
   }
 
   async function render() { await JourneyLib.ready; renderComposer(); renderFeed(); }
