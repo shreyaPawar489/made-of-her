@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
     .map(it => ({ key: String(it.key), achievement: clip(it.achievement, 300), track: clip(it.track, 30) }));
   const cands = {};
   const rawC = (body && body.candidates) || {};
-  for (const t of Object.keys(rawC).slice(0, 13)) {
+  for (const t of Object.keys(rawC).slice(0, 26)) {
     if (!Array.isArray(rawC[t])) continue;
     cands[t] = rawC[t].slice(0, 30).filter(c => c && c.id != null)
       .map(c => ({ id: c.id, name: clip(c.name, 80), desc: clip(c.desc, 200), memo: clip(c.memo, 400) }));
@@ -37,13 +37,19 @@ module.exports = async (req, res) => {
   const all = [].concat(...Object.values(cands));
   const byId = new Map(all.map(c => [String(c.id), c]));
   if (!all.length) return res.status(400).json({ error: 'no candidates' });
-  const listFor = it => (cands[it.track] && cands[it.track].length ? cands[it.track] : all);
+  // per-item list ('k:<key>', ranked client-side by overlap) wins, then the track list, then everyone
+  const listFor = it => [cands['k:' + it.key], cands[it.track], all].find(l => l && l.length);
 
   const prompt =
     'You connect a woman\'s achievements to real women from history and today who did something similar.\n' +
     'For EACH item, choose exactly one candidate id from that item\'s own candidate list. Use a different woman for each item when possible.\n' +
-    'Write "reason": one sentence, at most 28 words, saying how this woman\'s path connects to the achievement. ' +
-    'Use ONLY facts stated in the candidate\'s desc/memo. Never invent dates, schools, awards or quotes. Address the user as "you".\n\n' +
+    'Pick the candidate whose desc/memo shows she did the SAME KIND of thing (e.g. led a student group, founded something, argued a case, ran a lab, won a competition). ' +
+    'Candidates are listed roughly best-first.\n' +
+    'Write "reason": one sentence, at most 28 words, addressing the user as "you". Be honest about how close the match is:\n' +
+    '- If she clearly did a similar thing, say what she did, e.g. "She also led her university\'s student union before entering politics."\n' +
+    '- If no candidate did a similar thing, do NOT claim one. Name only the genuine shared trait (same field, also a first, also a leader), e.g. "Like you, she took on leadership early; she went on to become a senator."\n' +
+    'Never equate different roles (a student-club presidency is not a cabinet post; a class is not a career). ' +
+    'Use ONLY facts stated in the candidate\'s desc/memo. Never invent dates, schools, awards or quotes.\n\n' +
     items.map(it =>
       `ITEM key=${JSON.stringify(it.key)} track=${it.track || 'any'}\nAchievement: ${it.achievement}\nCandidates:\n` +
       listFor(it).map(c => `- id=${c.id} | ${c.name} | ${c.desc} | ${c.memo}`).join('\n')
