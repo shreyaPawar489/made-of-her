@@ -84,8 +84,9 @@
     },
     { // 3 Goal + interests
       html: () => `<h1>Where do you want to go?</h1>
-        <label class="field"><span>Your goal, in a sentence</span><input class="input" id="f_goal" value="${esc(d.goal)}" placeholder="Become a civil rights lawyer"></label>
-        <div class="field"><span>Interests (pick 1–3; the first is your main path)</span><div class="chips" id="f_int">${trackList().map(([k, l]) => `<button type="button" class="chip${d.interests.includes(k) ? ' on' : ''}" data-v="${k}">${esc(l)}</button>`).join('')}</div></div>`,
+        <label class="field"><span>Your goal, in your own words</span><input class="input" id="f_goal" value="${esc(d.goal)}" maxlength="300" placeholder="e.g. Become a civil rights lawyer, or launch my own startup"></label>
+        <p class="hint">Write it your way. Your coach reads exactly what you type.</p>
+        <div class="field"><span>Closest fields (optional: pick up to 3, or skip and we'll work it out from your sentence)</span><div class="chips" id="f_int">${trackList().map(([k, l]) => `<button type="button" class="chip${d.interests.includes(k) ? ' on' : ''}" data-v="${k}">${esc(l)}</button>`).join('')}</div></div>`,
       mount: () => $('f_int').addEventListener('click', e => {
         const b = e.target.closest('.chip'); if (!b) return;
         const v = b.dataset.v, i = d.interests.indexOf(v);
@@ -94,7 +95,7 @@
         validate();
       }),
       read: () => { d.goal = $('f_goal').value.trim(); },
-      ok: () => d.interests.length > 0
+      ok: () => d.goal.length >= 3 || d.interests.length > 0
     },
     { // 4 Photo
       html: () => `<h1>Take your portrait</h1>
@@ -220,12 +221,43 @@
     b.disabled = !S.ok();
   }
 
+  // ---------- track from free text ----------
+  // The member writes her goal in her own words; interests are optional. If she picked none, infer the track
+  // (law, medicine, cs, …) from her goal (weighted x3), role and experience. Defaults to "business".
+  const TRACK_WORDS = {
+    law: /\blaw\b|lawyer|attorney|legal|judge|court|paralegal|litigat|prosecut|public defender|bar exam|justice system/,
+    medicine: /doctor|physician|nurse|nursing|surgeon|medic|health|hospital|clinic|pharmac|patient|dentist|therap|psychiatr|midwife|veterinar/,
+    cs: /software|coding|\bcode\b|programm|developer|computer|\btech\b|data scien|machine learning|\bai\b|cyber|web dev|\bapps?\b/,
+    engineering: /engineer|robot|mechanical|electrical|aerospace|architect|\bdesign(er|ing)?\b|manufactur|construction/,
+    science: /scien|research|biolog|chemi|physic|\blab\b|climate|environment|geolog|mathemat|neuro|genetic|ecolog/,
+    space: /\bspace\b|astronaut|astronom|nasa|rocket|satellite|planet|cosmos/,
+    business: /startup|entrepreneur|business|founder|found(ing)? a|company|\bceo\b|manager|marketing|financ|invest|sales|product|consult|\bbank|launch|own my own|small business/,
+    policy: /policy|politic|government|public service|senat|mayor|campaign|diplomat|nonprofit|advoca|activis|elected|congress/,
+    media: /journalis|report(er|ing)|writer|writing|author|editor|\bmedia\b|podcast|\bfilm|broadcast|\bnews\b|content creat|blog/,
+    arts: /\bart(ist)?s?\b|music|singer|paint|danc|theat|\bactor|actress|fashion|photograph|creative|poet|sculpt|illustrat/,
+    education: /teach|educat|professor|school|tutor|principal|curricul|lecturer/,
+    sports: /athlet|\bsports?\b|soccer|basketball|olympic|swim|football|runner|fitness|referee|\bcoach(ing)?\b/
+  };
+  function inferTrack() {
+    const valid = new Set(trackList().map(([k]) => k));
+    const parts = [[d.goal, 3], [d.role, 1], [d.experienceText, 1]];
+    let best = null, bestScore = 0;
+    for (const k of Object.keys(TRACK_WORDS)) {
+      if (!valid.has(k)) continue;
+      let score = 0;
+      for (const [text, w] of parts) { const m = String(text || '').toLowerCase().match(new RegExp(TRACK_WORDS[k].source, 'g')); if (m) score += m.length * w; }
+      if (score > bestScore) { best = k; bestScore = score; }
+    }
+    return best || (valid.has('business') ? 'business' : [...valid][0]);
+  }
+
   // ---------- finish ----------
   async function finish() {
+    const track = d.interests[0] || inferTrack();
     const profile = {
       name: d.name, age: d.age ? +d.age : null, city: d.city, coords: null,
       stage: d.stage, years: +d.years || 0, grade: d.grade || '', role: d.role,
-      experienceText: d.experienceText, linkedin: d.linkedin || '', goal: d.goal, interests: d.interests.slice(), track: d.interests[0],
+      experienceText: d.experienceText, linkedin: d.linkedin || '', goal: d.goal, interests: d.interests.length ? d.interests.slice() : [track], track,
       openToMentor: d.openToMentor, shareInNetwork: d.shareInNetwork, photo: d.photo
     };
     card('<div class="reveal"><h1>Reading your experience…</h1><p class="lead">Finding the women who did what you did.</p><div class="spinner"></div></div>');
