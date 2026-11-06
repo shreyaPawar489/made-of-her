@@ -1,0 +1,801 @@
+{
+ "_note": "Used by coach.js (fallback steps when /api/coach fails) and api/experience.js (valid track ids). fields = library tile `field` values.",
+ "stageGroups": {
+  "high_school": "student",
+  "college": "student",
+  "early": "early",
+  "switching": "early",
+  "returning": "early",
+  "mid": "experienced",
+  "senior": "experienced"
+ },
+ "experiencedFromYears": 8,
+ "tracks": {
+  "law": {
+   "label": "Law",
+   "fields": [
+    "Lawyer",
+    "Politician",
+    "Activist"
+   ],
+   "themes": [
+    "courtroom",
+    "justice"
+   ]
+  },
+  "medicine": {
+   "label": "Medicine & health",
+   "fields": [
+    "Physician",
+    "Biologist"
+   ],
+   "themes": [
+    "clinic",
+    "health"
+   ]
+  },
+  "cs": {
+   "label": "Computer science & tech",
+   "fields": [
+    "Computer scientist",
+    "Mathematician",
+    "Engineer",
+    "Inventor"
+   ],
+   "themes": [
+    "lab",
+    "technology"
+   ]
+  },
+  "engineering": {
+   "label": "Engineering & design",
+   "fields": [
+    "Engineer",
+    "Inventor",
+    "Architect"
+   ],
+   "themes": [
+    "lab",
+    "design"
+   ]
+  },
+  "science": {
+   "label": "Science & research",
+   "fields": [
+    "Scientist",
+    "Physicist",
+    "Chemist",
+    "Biologist",
+    "Mathematician"
+   ],
+   "themes": [
+    "lab",
+    "science"
+   ]
+  },
+  "space": {
+   "label": "Space & astronomy",
+   "fields": [
+    "Astronaut",
+    "Astronomer",
+    "Physicist"
+   ],
+   "themes": [
+    "space",
+    "science"
+   ]
+  },
+  "business": {
+   "label": "Business & entrepreneurship",
+   "fields": [
+    "Businessperson",
+    "Economist",
+    "Inventor"
+   ],
+   "themes": [
+    "office",
+    "business"
+   ]
+  },
+  "policy": {
+   "label": "Policy & public service",
+   "fields": [
+    "Politician",
+    "Economist",
+    "Activist",
+    "Lawyer"
+   ],
+   "themes": [
+    "government",
+    "community"
+   ]
+  },
+  "media": {
+   "label": "Media & writing",
+   "fields": [
+    "Journalist",
+    "Writer",
+    "Photographer"
+   ],
+   "themes": [
+    "newsroom",
+    "media"
+   ]
+  },
+  "arts": {
+   "label": "Arts & creative work",
+   "fields": [
+    "Painter",
+    "Photographer",
+    "Singer",
+    "Writer",
+    "Architect"
+   ],
+   "themes": [
+    "studio",
+    "stage",
+    "arts"
+   ]
+  },
+  "education": {
+   "label": "Education & teaching",
+   "fields": [
+    "Educator",
+    "Mathematician",
+    "Writer"
+   ],
+   "themes": [
+    "classroom",
+    "education"
+   ]
+  },
+  "sports": {
+   "label": "Sports & athletics",
+   "fields": [
+    "Athlete"
+   ],
+   "themes": [
+    "field",
+    "sports"
+   ]
+  }
+ },
+ "fallbackSteps": {
+  "law": {
+   "student": [
+    {
+     "text": "Join or start a mock trial or debate team",
+     "why": "Arguing a case out loud is the fastest way to learn how lawyers think",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask a teacher or counselor how to shadow a lawyer for a day",
+     "why": "Seeing the work up close tells you which kind of law fits you",
+     "effort": "30 min"
+    },
+    {
+     "text": "Read about a landmark case argued by a woman and write 3 lines on why it mattered",
+     "why": "It shows what the path looks like and gives you something to talk about in interviews",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Sign up for the next event of your local or state bar association's women's committee",
+     "why": "Referrals and mentors in law mostly come from people you've met in person",
+     "effort": "30 min"
+    },
+    {
+     "text": "Volunteer for pro bono hours with a legal aid organization",
+     "why": "It builds real experience and a record of work you can point to",
+     "effort": "this week"
+    },
+    {
+     "text": "Write down your three biggest wins from the last year, with outcomes",
+     "why": "A clear record makes reviews, applications and promotions much easier",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Offer to mentor one junior lawyer or law student this quarter",
+     "why": "Your judgment is rare, and the next woman in the field gets there faster with it",
+     "effort": "30 min"
+    },
+    {
+     "text": "Write or speak about one lesson from your career, on a panel or in a short article",
+     "why": "It builds your name beyond your firm and gives others a map",
+     "effort": "this week"
+    },
+    {
+     "text": "Sponsor a woman for a stretch case or promotion decision",
+     "why": "Sponsorship, not advice alone, is what moves careers forward",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "medicine": {
+   "student": [
+    {
+     "text": "Volunteer at a hospital, clinic or health fair",
+     "why": "Time around patients shows you what the work is really like",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask your school counselor about a health-science program or summer program",
+     "why": "Programs give you experience and a recommendation for later",
+     "effort": "30 min"
+    },
+    {
+     "text": "Read the story of a woman physician and note one choice she made that you could make too",
+     "why": "Stories make a long path feel doable",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Find a mentor in your specialty through your professional society's women's group",
+     "why": "Specialty choice and training decisions go better with someone ahead of you",
+     "effort": "30 min"
+    },
+    {
+     "text": "Join a research, quality-improvement or community health project",
+     "why": "It adds experience beyond clinical hours and builds your CV",
+     "effort": "this week"
+    },
+    {
+     "text": "Keep a one-page list of cases, projects and teaching you've done",
+     "why": "You'll need it for every application, review and award",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Take on a resident or student as a mentee",
+     "why": "Women in medicine report that one champion changes their path",
+     "effort": "30 min"
+    },
+    {
+     "text": "Teach a session or give grand rounds on something you know well",
+     "why": "It builds your reputation and gives younger doctors your hard-won view",
+     "effort": "this week"
+    },
+    {
+     "text": "Nominate a colleague for an award or leadership role",
+     "why": "Women are nominated less often, and your nomination counts",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "cs": {
+   "student": [
+    {
+     "text": "Build one small project (a game, a site or a bot) and put it on GitHub",
+     "why": "A finished project teaches more than any course and shows what you can do",
+     "effort": "this week"
+    },
+    {
+     "text": "Join a coding club or a girls-in-tech group at school or online",
+     "why": "You learn faster and stay longer with peers",
+     "effort": "30 min"
+    },
+    {
+     "text": "Try a free beginner course on a topic you're curious about for one hour",
+     "why": "Starting is the hardest part; one hour is enough to see if you like it",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Contribute one fix or doc improvement to an open-source project",
+     "why": "It's real work with your name on it, and anyone can check it",
+     "effort": "this week"
+    },
+    {
+     "text": "Find a senior engineer to ask three questions about your next step",
+     "why": "Your next role depends on knowing how people made the jump",
+     "effort": "30 min"
+    },
+    {
+     "text": "Write a short post about something you built or learned",
+     "why": "Public work gets you noticed for roles you haven't applied for yet",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor an early-career woman engineer, or run a small learning group",
+     "why": "Women leave tech at high rates, and mentors are a big reason to stay",
+     "effort": "30 min"
+    },
+    {
+     "text": "Give a talk or write about a hard technical decision you made",
+     "why": "It builds your standing and teaches others",
+     "effort": "this week"
+    },
+    {
+     "text": "Push for a woman on your team to lead a project",
+     "why": "Visible projects are how people get promoted",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "engineering": {
+   "student": [
+    {
+     "text": "Join a robotics, maker or engineering club, or start one with a friend",
+     "why": "Building things in a team is what engineering is",
+     "effort": "this week"
+    },
+    {
+     "text": "Take apart or repair something and write what you learned",
+     "why": "Curiosity about how things work is the core skill",
+     "effort": "1 hour"
+    },
+    {
+     "text": "Look up an engineering summer program or open day near you",
+     "why": "You get hands-on experience and meet people in the field",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Join your professional society (for example a women in engineering group)",
+     "why": "Mentors and job leads come through these groups",
+     "effort": "30 min"
+    },
+    {
+     "text": "Volunteer on a project where you can lead a piece of the design",
+     "why": "Leading a piece shows you can own work",
+     "effort": "this week"
+    },
+    {
+     "text": "Document one project with photos, your role and the result",
+     "why": "A portfolio beats a résumé line",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Take on a junior engineer as a mentee",
+     "why": "You can save them years of avoidable mistakes",
+     "effort": "30 min"
+    },
+    {
+     "text": "Speak at a school or a university about your career",
+     "why": "Girls who meet a real engineer are more likely to pursue it",
+     "effort": "this week"
+    },
+    {
+     "text": "Put a woman forward for a technical lead role",
+     "why": "Representation in leadership changes who joins next",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "science": {
+   "student": [
+    {
+     "text": "Enter a science fair or start a small experiment of your own",
+     "why": "Doing real science teaches you to ask and test questions",
+     "effort": "this week"
+    },
+    {
+     "text": "Email a teacher or professor to ask if you can help in a lab",
+     "why": "Many labs welcome curious beginners if you ask politely",
+     "effort": "30 min"
+    },
+    {
+     "text": "Read the story of a woman scientist and write down the question she asked",
+     "why": "It shows how discoveries begin with a question",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Apply for a fellowship, travel grant or poster session",
+     "why": "Small recognitions add up to a career",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask a researcher you admire for a 20-minute chat about their path",
+     "why": "Most scientists enjoy talking about their work, and advice here is specific",
+     "effort": "30 min"
+    },
+    {
+     "text": "Update a one-page summary of your methods, results and skills",
+     "why": "You'll need it for grants, jobs and collaborations",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor a graduate student or postdoc, especially a woman",
+     "why": "Support at this stage keeps talented people in science",
+     "effort": "30 min"
+    },
+    {
+     "text": "Review a paper or join a grant panel",
+     "why": "It shapes the field and raises your visibility",
+     "effort": "this week"
+    },
+    {
+     "text": "Nominate a colleague for a prize or society role",
+     "why": "Women win prizes less often partly because they're nominated less",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "space": {
+   "student": [
+    {
+     "text": "Join an astronomy club or attend a public star-gazing night",
+     "why": "Looking through a telescope is where many careers begin",
+     "effort": "this week"
+    },
+    {
+     "text": "Learn to name five constellations or planets you can see tonight",
+     "why": "A small, doable start builds the habit",
+     "effort": "1 hour"
+    },
+    {
+     "text": "Look up a space-science summer program or competition for your age",
+     "why": "It gives you real projects and people to learn from",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Join a local astronomy society or a space-industry network",
+     "why": "Space is a small world where introductions matter",
+     "effort": "30 min"
+    },
+    {
+     "text": "Volunteer for a citizen-science project in astronomy",
+     "why": "It's real data work you can list",
+     "effort": "this week"
+    },
+    {
+     "text": "Apply to one program or fellowship in the space sector",
+     "why": "Even trying clarifies what they look for",
+     "effort": "this week"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor a student interested in space",
+     "why": "Your path is the example many girls never get to see",
+     "effort": "30 min"
+    },
+    {
+     "text": "Give a public talk at a school or a science center",
+     "why": "Public visibility inspires the next group",
+     "effort": "this week"
+    },
+    {
+     "text": "Recommend a woman for a mission, panel or leadership role",
+     "why": "Opportunities in this field pass through personal networks",
+     "effort": "30 min"
+    }
+   ]
+  },
+  "business": {
+   "student": [
+    {
+     "text": "Start a tiny project that earns or raises a small amount (a bake sale, a service, a product)",
+     "why": "Selling something real teaches more than a class",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask a local business owner how they started and what they'd do differently",
+     "why": "Practical stories beat theory",
+     "effort": "30 min"
+    },
+    {
+     "text": "Join a business, DECA or entrepreneurship club",
+     "why": "Teams and competitions make the learning stick",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Talk to three people one step ahead of you about how they got there",
+     "why": "Patterns across their answers show your own next move",
+     "effort": "this week"
+    },
+    {
+     "text": "Join a women's business or founders network in your city or online",
+     "why": "Deals, clients and advice mostly come through relationships",
+     "effort": "30 min"
+    },
+    {
+     "text": "Write a one-page plan with one goal and the first three steps",
+     "why": "A written plan makes it much more likely you'll act",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor or invest in a woman founder or rising manager",
+     "why": "Women-led companies often have trouble finding the first backer",
+     "effort": "30 min"
+    },
+    {
+     "text": "Join or start a board, advisory group or peer circle",
+     "why": "It grows your influence and your view of the market",
+     "effort": "this week"
+    },
+    {
+     "text": "Speak about a hard lesson from your career",
+     "why": "Honest stories help others avoid the same mistakes",
+     "effort": "this week"
+    }
+   ]
+  },
+  "policy": {
+   "student": [
+    {
+     "text": "Join student government, a youth council or a model UN team",
+     "why": "It's practice in leading and persuading a real group",
+     "effort": "this week"
+    },
+    {
+     "text": "Attend a city council or school board meeting and note one decision",
+     "why": "Local government is where most students first see how decisions get made",
+     "effort": "1 hour"
+    },
+    {
+     "text": "Write to a local official about an issue you care about",
+     "why": "It teaches you how to make an argument and get a reply",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Volunteer for a campaign, advocacy group or public-interest organization",
+     "why": "Experience on the inside beats reading about it",
+     "effort": "this week"
+    },
+    {
+     "text": "Find out how your local government appoints people to boards and committees",
+     "why": "Appointed roles are often easier to get than elected ones and lead further",
+     "effort": "30 min"
+    },
+    {
+     "text": "Write a short policy memo on one local problem",
+     "why": "A clear memo is the best calling card in policy",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor or sponsor a woman considering public service",
+     "why": "Many women only run after someone asks them directly",
+     "effort": "30 min"
+    },
+    {
+     "text": "Offer testimony, a briefing or an op-ed on your area of expertise",
+     "why": "It builds trust and puts you in the room",
+     "effort": "this week"
+    },
+    {
+     "text": "Join a board or commission where you can lead",
+     "why": "Leadership roles train you for bigger ones",
+     "effort": "this week"
+    }
+   ]
+  },
+  "media": {
+   "student": [
+    {
+     "text": "Write for your school paper, blog or newsletter, even one short piece",
+     "why": "Published work is the fastest way to learn and the only portfolio you need now",
+     "effort": "this week"
+    },
+    {
+     "text": "Interview someone interesting and write up what you learned",
+     "why": "Interviewing is the core skill of reporting",
+     "effort": "1 hour"
+    },
+    {
+     "text": "Read a great piece by a woman journalist and note what makes it work",
+     "why": "Good writing is learned partly by taking it apart",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Pitch one story to a local outlet",
+     "why": "Editors know that unsolicited ideas are how new voices break in",
+     "effort": "this week"
+    },
+    {
+     "text": "Build a simple online portfolio with your 3 best pieces",
+     "why": "It's the first thing an editor will look for",
+     "effort": "1 hour"
+    },
+    {
+     "text": "Join a professional group for women journalists or writers",
+     "why": "Leads and mentors often come through these groups",
+     "effort": "30 min"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor a younger writer or reporter",
+     "why": "One editor's belief often changes a writer's career",
+     "effort": "30 min"
+    },
+    {
+     "text": "Pitch or commission a story that amplifies a woman who isn't getting coverage",
+     "why": "What gets covered shapes who's remembered",
+     "effort": "this week"
+    },
+    {
+     "text": "Teach a workshop or speak on a craft lesson from your career",
+     "why": "It grows your name and passes on the skill",
+     "effort": "this week"
+    }
+   ]
+  },
+  "arts": {
+   "student": [
+    {
+     "text": "Make something every day for a week, however small, and keep it",
+     "why": "Habit and volume matter more than polish at the start",
+     "effort": "this week"
+    },
+    {
+     "text": "Show your work to one person whose opinion you trust and ask one question",
+     "why": "Feedback is how craft grows",
+     "effort": "30 min"
+    },
+    {
+     "text": "Look up an open mic, student show or exhibit you could take part in",
+     "why": "A first audience is a big step",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Submit your work to one open call, show or competition",
+     "why": "Rejection is normal; the entries build your list of credits",
+     "effort": "this week"
+    },
+    {
+     "text": "Find an artist or performer a few steps ahead and ask how they make a living",
+     "why": "Practical details matter as much as talent",
+     "effort": "30 min"
+    },
+    {
+     "text": "Put your best 5 pieces in one simple portfolio page",
+     "why": "It's what you'll send to every gallery, studio or producer",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor a young artist or offer a studio or stage visit",
+     "why": "Access is often the biggest barrier",
+     "effort": "30 min"
+    },
+    {
+     "text": "Curate, host or recommend a woman for a show, panel or commission",
+     "why": "Opportunity in the arts passes through a few hands",
+     "effort": "this week"
+    },
+    {
+     "text": "Teach a workshop or talk about your process",
+     "why": "It grows your reach and shares your craft",
+     "effort": "this week"
+    }
+   ]
+  },
+  "education": {
+   "student": [
+    {
+     "text": "Tutor or help a younger student with something you're good at",
+     "why": "Teaching is the fastest way to find out if you enjoy it",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask a teacher you admire what they wish they'd known at the start",
+     "why": "Good teachers tend to have specific, useful answers",
+     "effort": "30 min"
+    },
+    {
+     "text": "Look into a teaching or education program or club at your school",
+     "why": "It's an early look at a career that shapes many others",
+     "effort": "30 min"
+    }
+   ],
+   "early": [
+    {
+     "text": "Observe a teacher whose classroom you admire for one lesson",
+     "why": "One lesson teaches you more than a manual",
+     "effort": "30 min"
+    },
+    {
+     "text": "Join a teachers' network, union or subject association",
+     "why": "Resources, mentors and openings come through these",
+     "effort": "30 min"
+    },
+    {
+     "text": "Document one lesson or project that worked and why",
+     "why": "Evidence of impact helps you with reviews and new roles",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Mentor a new teacher or student teacher",
+     "why": "The first years are when most teachers quit; support keeps them",
+     "effort": "30 min"
+    },
+    {
+     "text": "Share one lesson plan or method that works at a conference or online",
+     "why": "It multiplies your impact beyond your classroom",
+     "effort": "this week"
+    },
+    {
+     "text": "Put your name forward for a curriculum, department-head or policy role",
+     "why": "Teachers who step up shape the system",
+     "effort": "this week"
+    }
+   ]
+  },
+  "sports": {
+   "student": [
+    {
+     "text": "Try out for a team, or start a casual group of your own",
+     "why": "Playing consistently builds confidence and friends who also push you",
+     "effort": "this week"
+    },
+    {
+     "text": "Ask a coach what they look for in a player and what to practise this month",
+     "why": "A coach's specific tips are worth hours of guessing",
+     "effort": "30 min"
+    },
+    {
+     "text": "Read about a woman athlete and the barrier she faced",
+     "why": "It shows how others made their own way",
+     "effort": "1 hour"
+    }
+   ],
+   "early": [
+    {
+     "text": "Look for a coaching, officiating or club-leadership role",
+     "why": "Leadership roles keep you in the sport in many ways",
+     "effort": "this week"
+    },
+    {
+     "text": "Find a mentor through a women's sports organization",
+     "why": "Careers in sport often depend on who knows you",
+     "effort": "30 min"
+    },
+    {
+     "text": "Track your results and goals for the season in one place",
+     "why": "Records help you improve and help with sponsors and applications",
+     "effort": "1 hour"
+    }
+   ],
+   "experienced": [
+    {
+     "text": "Coach or mentor a young athlete, especially a girl",
+     "why": "Coaching and role models are why many girls stay in sport",
+     "effort": "30 min"
+    },
+    {
+     "text": "Speak at a school or club about your career",
+     "why": "Visibility helps girls see it as an option",
+     "effort": "this week"
+    },
+    {
+     "text": "Advocate for a woman's team, program or resource at your club or league",
+     "why": "Funding and access shape who gets to play",
+     "effort": "this week"
+    }
+   ]
+  }
+ }
+}
