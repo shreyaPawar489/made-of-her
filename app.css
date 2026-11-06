@@ -154,3 +154,12 @@ textarea.input { min-height: 140px; resize: vertical; }
 /* hide the coach dock during onboarding */
 body.onboarding #coachDock { display: none; }
 #steps { margin-bottom: 16px; }
+/* phone overflow fixes */
+.grid3 > *, .me-wrap > *, .net-grid > * { min-width: 0; }
+html, body { overflow-x: hidden; }
+@media (max-width: 639px) {
+  .nav-avatar { display: none; }
+  .tabs { gap: 0; }
+  .tabs a { padding: 6px 9px; font-size: 14px; }
+  .brand { font-size: 18px; }
+}
