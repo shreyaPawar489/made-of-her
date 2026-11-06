@@ -1,4 +1,5 @@
-// coach.js — Claude coach for Made of Her: "Today's steps" card (#steps), chat dock (#coachDock), experience reader.
+// coach.js — the personal agent's chat (#coachDock) + "Action plan" card (#steps) + experience reader.
+// The plan only fills after she has actually talked with her agent about what she wants (no assumed steps).
 // Owner: P2 (Emma). Contract: JOURNEY.md §3. Globals provided: openCoach(prefill), readExperience(profile).
 // Needs: store.js (JStore), config.js (JCONFIG.apiBase). Optional: openAchievementComposer (P1). All calls to others are guarded.
 // Model text is only ever rendered with textContent (never innerHTML).
@@ -85,23 +86,25 @@
   let stepsBusy = false;
   function renderSteps() {
     const mount = $('steps'); if (!mount || !store()) return;
-    const st = store().get(), todo = st.steps.filter(s => s.status !== 'done'), done = st.steps.filter(s => s.status === 'done');
-    const sig = JSON.stringify([todo.map(s => s.id + s.text), done.length, stepsBusy, !!st.profile]);
+    const st = store().get(), talked = st.chat.some(m => m.role === 'user');
+    // steps only count once she has talked them through with her agent
+    const todo = talked ? st.steps.filter(s => s.status !== 'done') : [], done = st.steps.filter(s => s.status === 'done');
+    const sig = JSON.stringify([todo.map(s => s.id + s.text), done.length, stepsBusy, !!st.profile, talked]);
     if (mount.dataset.sig === sig) return; mount.dataset.sig = sig;
     mount.textContent = '';
-    const card = el('section', 'cs'); card.setAttribute('aria-label', "Today's steps");
-    const head = el('div', 'cs-head'); head.appendChild(el('h3', 'cs-title', "Today's steps"));
+    const card = el('section', 'cs'); card.setAttribute('aria-label', 'Action plan');
+    const head = el('div', 'cs-head'); head.appendChild(el('h3', 'cs-title', 'Action plan'));
     if (done.length) head.appendChild(el('span', 'cs-done-count', done.length + ' done'));
     card.appendChild(head);
-    if (!st.profile) card.appendChild(el('p', 'cs-empty', 'Finish your profile and your coach will suggest your first steps.'));
+    if (!st.profile) card.appendChild(el('p', 'cs-empty', 'Finish your profile first.'));
     else if (!todo.length) {
-      card.appendChild(el('p', 'cs-empty', done.length ? 'All caught up. Ask your coach what comes next.' : 'Your coach will suggest steps based on where you are and where you want to go.'));
-      const b = el('button', 'cs-btn', stepsBusy ? 'Thinking…' : (done.length ? 'What should I do next?' : 'Get my first steps')); b.disabled = stepsBusy;
-      b.onclick = () => window.openCoach(done.length ? 'What should I do next?' : '');
+      card.appendChild(el('p', 'cs-empty', done.length && talked ? 'All caught up. Talk with your agent about what comes next.' : 'No plan yet. Tell your personal agent what you want to work on, and you\'ll build your next steps together.'));
+      const b = el('button', 'cs-btn', stepsBusy ? 'Thinking…' : (talked ? 'Plan what\'s next' : 'Build my plan')); b.disabled = stepsBusy;
+      b.onclick = () => window.openCoach('');
       card.appendChild(b);
     } else {
       const list = el('div', 'cs-list'); todo.slice(0, 5).forEach(s => list.appendChild(stepRow(s))); card.appendChild(list);
-      const more = el('button', 'cs-link', 'Ask your coach →'); more.onclick = () => window.openCoach(''); card.appendChild(more);
+      const more = el('button', 'cs-link', 'Talk to your agent →'); more.onclick = () => window.openCoach(''); card.appendChild(more);
     }
     mount.appendChild(card);
   }
@@ -113,12 +116,12 @@
     dockEl = $('coachDock'); if (!dockEl || built) return;
     built = true; dockEl.textContent = ''; dockEl.classList.add('cd');
     barEl = el('button', 'cd-bar'); barEl.type = 'button'; barEl.setAttribute('aria-expanded', 'false');
-    barEl.appendChild(el('span', 'cd-bar-icon', '✨')); barEl.appendChild(el('span', 'cd-bar-label', 'Ask your coach'));
+    barEl.appendChild(el('span', 'cd-bar-icon', '✨')); barEl.appendChild(el('span', 'cd-bar-label', 'Your personal agent'));
     dotEl = el('span', 'cd-dot'); dotEl.hidden = true; barEl.appendChild(dotEl);
     barEl.onclick = () => setOpen(true);
-    panelEl = el('div', 'cd-panel'); panelEl.hidden = true; panelEl.setAttribute('role', 'dialog'); panelEl.setAttribute('aria-label', 'Your coach');
-    const head = el('div', 'cd-head'); head.appendChild(el('strong', 'cd-title', 'Your coach'));
-    const x = el('button', 'cd-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close coach'); x.onclick = () => setOpen(false); head.appendChild(x);
+    panelEl = el('div', 'cd-panel'); panelEl.hidden = true; panelEl.setAttribute('role', 'dialog'); panelEl.setAttribute('aria-label', 'Your personal agent');
+    const head = el('div', 'cd-head'); head.appendChild(el('strong', 'cd-title', 'Your personal agent'));
+    const x = el('button', 'cd-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.onclick = () => setOpen(false); head.appendChild(x);
     listEl = el('div', 'cd-list'); listEl.setAttribute('aria-live', 'polite');
     chipsEl = el('div', 'cd-chips');
     ['What should I do this week?', 'How do I find a mentor?', 'I just finished a step'].forEach(q => { const c = el('button', 'cd-chip', q); c.type = 'button'; c.onclick = () => send(q); chipsEl.appendChild(c); });
@@ -160,7 +163,7 @@
   function renderChat() {
     if (!built || !store()) return;
     const st = store().get(); listEl.textContent = '';
-    if (!st.chat.length && !sending) listEl.appendChild(el('p', 'cd-hello', st.profile ? 'Hi! Tell me what you worked on, or ask what to do next.' : 'Finish your profile and I can coach you.'));
+    if (!st.chat.length && !sending) listEl.appendChild(el('p', 'cd-hello', st.profile ? 'Hi! I\'m your personal agent. What do you want to work toward right now?' : 'Finish your profile and I can help.'));
     st.chat.forEach((m, i) => listEl.appendChild(bubble(m, i)));
     if (sending) { const t = el('div', 'cd-msg coach thinking'); t.appendChild(el('div', 'cd-text', 'Thinking…')); listEl.appendChild(t); }
     chipsEl.hidden = st.chat.length > 2 || sending || !st.profile;
@@ -185,13 +188,14 @@
       const r = await askCoach(isKickoff);
       store().pushChat({ role: 'assistant', content: r.reply, suggest: r.suggestAchievement || undefined });
       if (r.steps && r.steps.length) store().addSteps(r.steps.map(s => Object.assign({ status: 'todo' }, s)));
-      if (isKickoff) await addFallbackIfEmpty();
+      // no assumed steps: the plan is built in conversation
     } catch (e) {
       const notSetUp = e && e.status === 501;
-      store().pushChat({ role: 'assistant', content: isKickoff || !store().get().steps.length
-        ? (notSetUp ? "My live coaching isn't switched on yet, so here are steps picked for your path." : "I couldn't reach my coaching brain just now, so here are steps picked for your path. Try me again in a moment.")
-        : (notSetUp ? "My live coaching isn't switched on yet. Your steps are on the right while that gets fixed." : "I couldn't reach my coaching brain just now. Please try again in a moment.") });
-      await addFallbackIfEmpty();
+      store().pushChat({ role: 'assistant', content: isKickoff
+        ? 'Hi! What do you want to work toward right now? Tell me in your own words and we\'ll plan the next steps together.'
+        : (notSetUp ? "I can't reach my planning brain yet. Tell me more and I'll pick it up as soon as I'm back." : "I couldn't reach my planning brain just now. Please try again in a moment.") });
+      // fallback steps only once she has said what she wants to work on
+      if (!isKickoff && store().get().chat.some(m => m.role === 'user')) await addFallbackIfEmpty();
     } finally { sending = false; stepsBusy = false; renderChat(); renderSteps(); }
   }
   async function kickoff() { if (kickoffRunning) return; kickoffRunning = true; try { await turn(true); } finally { kickoffRunning = false; } }
@@ -219,7 +223,7 @@
       if (st.chat.length > seen && st.chat[st.chat.length - 1].role === 'assistant') dotEl.hidden = false;
     }
     // A member who arrives with a profile but no steps (demo persona, returning visit): prepare steps quietly.
-    if (!autoKick && built && st.profile && !st.steps.length && !st.chat.length && !sending) { autoKick = true; kickoff(); }
+    // (no silent kickoff: steps are never prepared before she has talked with her agent)
   }
   window.addEventListener('jstore', e => {
     if (!store()) return;

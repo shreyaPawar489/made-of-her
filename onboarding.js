@@ -50,7 +50,7 @@
       ok: () => d.name.length > 0
     },
     { // 1 Where you are now
-      html: () => `<h1>Where are you right now?</h1><p class="lead">Middle schooler or CEO, there's a place for you here. Your coach and your matches adapt to your stage.</p>
+      html: () => `<h1>Where are you right now?</h1><p class="lead">Middle schooler or CEO, there's a place for you here. Your personal agent and your matches adapt to your stage.</p>
         <div class="field"><span>Stage ${info('stages', '<dl>' + STAGES.map(([k, l]) => `<dt>${l}</dt><dd>${STAGE_INFO[k]}</dd>`).join('') + '</dl>')}</span><div class="chips" id="f_stage">${STAGES.map(([k, l]) => `<button type="button" class="chip${d.stage === k ? ' on' : ''}" data-v="${k}" title="${esc(STAGE_INFO[k])}">${l}</button>`).join('')}</div></div>
         ${d.stage ? `<div class="row">${expField()}
         <label class="field"><span>${isStudent() ? 'School' : 'Current role'}</span><input class="input" id="f_role" value="${esc(d.role)}" placeholder="${isStudent() ? (d.stage === 'college' ? 'Pre-law at UC Berkeley' : 'Lincoln Middle School') : 'Paralegal at …'}"></label></div>` : ''}`,
@@ -89,7 +89,7 @@
     { // 3 Goal + interests
       html: () => `<h1>Where do you want to go?</h1>
         <label class="field"><span>Your goal, in your own words</span><input class="input" id="f_goal" value="${esc(d.goal)}" maxlength="300" placeholder="e.g. Become a civil rights lawyer, or launch my own startup"></label>
-        <p class="hint">Write it your way. Your coach reads exactly what you type.</p>
+        <p class="hint">Write it your way. Your personal agent reads exactly what you type.</p>
         <div class="field"><span>Closest fields (optional: pick up to 3, or skip and we'll work it out from your sentence)</span><div class="chips" id="f_int">${trackList().map(([k, l]) => `<button type="button" class="chip${d.interests.includes(k) ? ' on' : ''}" data-v="${k}">${esc(l)}</button>`).join('')}</div></div>`,
       mount: () => $('f_int').addEventListener('click', e => {
         const b = e.target.closest('.chip'); if (!b) return;

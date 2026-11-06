@@ -70,13 +70,13 @@
     const loggedToday = (s.achievements || []).some(a => !a.past && a.date === today());
     if (!isDismissed('checkin')) {
       const back = mem.lastVisit && mem.lastVisit !== today();
-      const todo = (s.steps || []).find(x => x.status !== 'done');
+      const todo = (s.chat || []).some(m => m.role === 'user') && (s.steps || []).find(x => x.status !== 'done');
       out.push({ id: 'checkin', kind: 'checkin', icon: '☀️',
         title: loggedToday ? `Nice work today, ${first(s.profile.name)}. Anything else to log?` : back ? `Welcome back, ${first(s.profile.name)}. What did you do since yesterday?` : `${first(s.profile.name)}, what did you get done today?`,
         body: 'Anything counts: a class, a conversation, an application. Each one adds a woman who went first to your portrait.' + (todo ? ` Your open step: “${todo.text}”.` : ''),
         input: true,
         actions: [['Log it', text => { if (window.openAchievementComposer) openAchievementComposer({ text: text || '', stepId: null }); }, 'primary'],
-          ['Plan with coach', () => window.openCoach && openCoach(s.profile.goal ? `Help me plan my next step toward: ${s.profile.goal}` : 'What should I do next?')]] });
+          ['Talk it through', () => window.openCoach && openCoach('')]] });
     }
     return out;
   }
@@ -90,7 +90,7 @@
     host.hidden = false;
     idx = Math.min(idx, list.length - 1);
     const n = list[idx];
-    host.innerHTML = `<div class="agent-head"><span class="agent-k">Your agent</span>${list.length > 1 ? `<span class="agent-count">${idx + 1} of ${list.length} <button class="agent-next" type="button" aria-label="Next">›</button></span>` : ''}</div>
+    host.innerHTML = `<div class="agent-head"><span class="agent-k">Your personal agent</span>${list.length > 1 ? `<span class="agent-count">${idx + 1} of ${list.length} <button class="agent-next" type="button" aria-label="Next">›</button></span>` : ''}</div>
       <div class="agent-body agent-${n.kind}"><div class="agent-ic">${n.icon}</div><div class="agent-txt"><b>${esc(n.title)}</b><p>${esc(n.body)}</p>
       ${n.input ? '<input class="input agent-in" maxlength="200" placeholder="e.g. Signed up for the mock trial team">' : ''}
       <div class="agent-acts">${n.actions.map((a, i) => `<button type="button" class="btn small ${a[2] === 'primary' ? '' : 'ghost'}" data-a="${i}">${esc(a[0])}</button>`).join('')}</div></div></div>`;
