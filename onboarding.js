@@ -22,7 +22,7 @@
   const withTimeout = (p, ms, fallback) => Promise.race([Promise.resolve(p).catch(() => fallback), new Promise(r => setTimeout(() => r(fallback), ms))]);
 
   let step = 0, stream = null;
-  const d = { name: '', age: '', city: '', stage: '', years: '', grade: '', role: '', experienceText: '', goal: '', interests: [], photo: '', shareInNetwork: true, openToMentor: false };
+  const d = { name: '', age: '', city: '', stage: '', years: '', grade: '', role: '', experienceText: '', linkedin: '', goal: '', interests: [], photo: '', shareInNetwork: true, openToMentor: false };
 
   function trackList() {
     const t = window.App && App.tracks && Object.keys(App.tracks).length ? App.tracks : null;
@@ -66,9 +66,20 @@
     { // 2 What you've done
       html: () => `<h1>What have you already done?</h1>
         <p class="lead">Classes, clubs, jobs, projects, awards, caring for family. It all counts. Your past achievements fill your portrait from day one (up to 40%).</p>
+        <div class="li-box${d.linkedin ? ' on' : ''}" id="liBox">
+          <button type="button" class="li-btn" id="liToggle"><span class="li-logo">in</span>${d.linkedin ? 'LinkedIn connected' : 'Connect LinkedIn'}<small>${d.linkedin ? esc(d.linkedin.replace(/^https?:\/\/(www\.)?/, '')) : 'Optional · import your experience'}</small></button>
+          <div class="li-panel" id="liPanel" hidden>
+            <label class="field"><span>Your LinkedIn profile URL</span><input class="input" id="f_li" value="${esc(d.linkedin)}" placeholder="linkedin.com/in/your-name" inputmode="url" autocomplete="url"></label>
+            <label class="field"><span>Paste your Experience section (optional)</span>
+              <textarea class="input" id="f_liPaste" style="min-height:90px" placeholder="On LinkedIn: open your profile → Experience → select it all and copy. Paste it here."></textarea></label>
+            <p class="hint" style="margin:-6px 0 10px">LinkedIn doesn't share work history with other apps, so you paste it. We only read what you paste, and members see your profile link once you connect.</p>
+            <button type="button" class="btn small" id="liImport">Add to my experience</button> <span class="hint" id="liMsg"></span>
+          </div>
+        </div>
         <textarea class="input" id="f_exp" placeholder="${isStudent() ? 'Captain of debate team, volunteered at a legal aid clinic, AP Gov 5…' : 'Practiced civil rights law for 28 years, argued before the state supreme court, mentored 12 junior associates…'}">${esc(d.experienceText)}</textarea>
         <p class="hint">Only what you write here is used. We never invent achievements.</p>`,
-      read: () => { d.experienceText = $('f_exp').value.trim(); },
+      mount: mountLinkedIn,
+      read: () => { d.experienceText = $('f_exp').value.trim(); const li = $('f_li'); if (li) d.linkedin = cleanLinkedIn(li.value); },
       ok: () => true
     },
     { // 3 Goal + interests
@@ -115,6 +126,35 @@
       b.parentNode.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b));
       validate();
     });
+  }
+
+  // ---------- LinkedIn ----------
+  // A profile link + a pasted Experience section. (LinkedIn's API only shares name/email/photo with apps, not work history.)
+  function cleanLinkedIn(v) {
+    v = String(v || '').trim(); if (!v) return '';
+    const m = v.match(/linkedin\.com\/(in|pub)\/([A-Za-z0-9\-_%]+)/i);
+    return m ? 'https://www.linkedin.com/in/' + m[2] : '';
+  }
+  // Turn a copied LinkedIn Experience section into short lines; drop UI noise and durations.
+  function tidyLinkedInPaste(t) {
+    const noise = /^(experience|show all.*|see more|…see more|logo|full-time|part-time|internship|self-employed|freelance|contract|on-site|remote|hybrid|skills:.*|\d+ (yrs?|mos?)( \d+ mos?)?|\S+ logo)$/i;
+    const seen = new Set();
+    return String(t || '').split(/\n+/).map(x => x.replace(/\s*·\s*(full-time|part-time|internship|self-employed|freelance|contract|\d+ (yrs?|mos?).*)$/i, '').trim())
+      .filter(x => x && x.length > 2 && !noise.test(x) && !/^[A-Z][a-z]{2} \d{4}\s*[-–]/.test(x) && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()))
+      .join('; ').slice(0, 1500);
+  }
+  function mountLinkedIn() {
+    $('liToggle').onclick = () => { const p = $('liPanel'); p.hidden = !p.hidden; if (!p.hidden) $('f_li').focus(); };
+    $('liImport').onclick = () => {
+      const url = cleanLinkedIn($('f_li').value), raw = $('f_liPaste').value;
+      if ($('f_li').value.trim() && !url) { $('liMsg').textContent = 'That doesn\'t look like a linkedin.com/in/… link.'; return; }
+      d.linkedin = url;
+      const lines = tidyLinkedInPaste(raw);
+      if (lines) { const ex = $('f_exp'); ex.value = (ex.value.trim() ? ex.value.trim() + '\n' : '') + lines; d.experienceText = ex.value.trim(); }
+      $('liPanel').hidden = true;
+      $('liBox').classList.toggle('on', !!url);
+      $('liToggle').innerHTML = '<span class="li-logo">in</span>' + (url ? 'LinkedIn connected' : 'Connect LinkedIn') + '<small>' + (lines ? 'Experience added below. Edit anything.' : esc(url.replace(/^https?:\/\/(www\.)?/, '') || 'Optional · import your experience')) + '</small>';
+    };
   }
 
   // ---------- camera ----------
@@ -185,7 +225,7 @@
     const profile = {
       name: d.name, age: d.age ? +d.age : null, city: d.city, coords: null,
       stage: d.stage, years: +d.years || 0, grade: d.grade || '', role: d.role,
-      experienceText: d.experienceText, goal: d.goal, interests: d.interests.slice(), track: d.interests[0],
+      experienceText: d.experienceText, linkedin: d.linkedin || '', goal: d.goal, interests: d.interests.slice(), track: d.interests[0],
       openToMentor: d.openToMentor, shareInNetwork: d.shareInNetwork, photo: d.photo
     };
     card('<div class="reveal"><h1>Reading your experience…</h1><p class="lead">Finding the women who did what you did.</p><div class="spinner"></div></div>');
