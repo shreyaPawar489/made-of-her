@@ -1,0 +1,60 @@
+/* coach.css — Today's steps card + coach chat dock. Owner: P2 (Emma). Uses P3's brand tokens, with fallbacks. */
+.cs, .cd { --c-card: var(--card, #fff); --c-line: var(--line, #E8DED4); --c-ink: var(--ink, #221A20); --c-muted: var(--muted, #6E6470); --c-plum: var(--plum, #6B2D5C); --c-coral: var(--coral, #E8735A); --c-gold: var(--gold, #C9973A); font-family: Inter, system-ui, sans-serif; color: var(--c-ink); }
+
+/* ---- Today's steps ---- */
+.cs { background: var(--c-card); border: 1px solid var(--c-line); border-radius: 12px; padding: 14px 14px 12px; }
+.cs-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.cs-title { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; }
+.cs-done-count { font-size: 12px; color: var(--c-muted); }
+.cs-list { display: flex; flex-direction: column; }
+.cs-step { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--c-line); cursor: pointer; }
+.cs-step:first-child { border-top: 0; }
+.cs-step input { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; margin: 1px 0 0; border: 2px solid var(--c-plum); border-radius: 6px; background: #fff; cursor: pointer; flex: none; }
+.cs-step input:hover, .cs-step input:focus-visible { background: #F3E6EF; outline: none; box-shadow: 0 0 0 3px rgba(107, 45, 92, .18); }
+.cs-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cs-text { font-size: 14px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.cs-why { font-size: 12.5px; line-height: 1.4; color: var(--c-muted); }
+.cs-effort { font-size: 11px; font-weight: 600; color: var(--c-plum); background: #F3E6EF; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+.cs-empty { margin: 4px 0 10px; font-size: 13.5px; line-height: 1.45; color: var(--c-muted); }
+.cs-btn { width: 100%; border: 0; border-radius: 10px; padding: 10px 14px; font: 600 14px Inter, system-ui, sans-serif; background: var(--c-plum); color: #fff; cursor: pointer; }
+.cs-btn:disabled { opacity: .6; cursor: default; }
+.cs-link { margin-top: 6px; padding: 6px 0 0; border: 0; border-top: 1px solid var(--c-line); width: 100%; text-align: left; background: none; color: var(--c-plum); font: 600 13px Inter, system-ui, sans-serif; cursor: pointer; }
+
+/* ---- Coach dock ---- */
+.cd { position: fixed; right: 16px; bottom: 16px; z-index: 40; }
+.cd-bar { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 12px 18px; background: var(--c-plum); color: #fff; font: 600 14px Inter, system-ui, sans-serif; box-shadow: 0 8px 24px rgba(34, 26, 32, .25); cursor: pointer; position: relative; }
+.cd-bar[hidden], .cd-panel[hidden] { display: none; }
+.cd-dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--c-coral); border: 2px solid #fff; }
+.cd-panel { width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100vh - 48px)); display: flex; flex-direction: column; background: var(--c-card); border: 1px solid var(--c-line); border-radius: 16px; box-shadow: 0 16px 48px rgba(34, 26, 32, .28); overflow: hidden; }
+.cd-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--c-plum); color: #fff; }
+.cd-title { font-family: Fraunces, Georgia, serif; font-size: 17px; font-weight: 600; }
+.cd-x { border: 0; background: none; color: #fff; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.cd-list { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg, #F6F1EC); }
+.cd-hello { margin: auto 0; text-align: center; font-size: 13.5px; color: var(--c-muted); }
+.cd-msg { max-width: 88%; display: flex; flex-direction: column; gap: 6px; }
+.cd-msg.me { align-self: flex-end; align-items: flex-end; }
+.cd-text { padding: 10px 12px; border-radius: 14px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cd-msg.coach .cd-text { background: #fff; border: 1px solid var(--c-line); border-bottom-left-radius: 4px; }
+.cd-msg.me .cd-text { background: var(--c-plum); color: #fff; border-bottom-right-radius: 4px; }
+.cd-msg.thinking .cd-text { color: var(--c-muted); font-style: italic; }
+.cd-log { align-self: flex-start; border: 1px solid var(--c-gold); background: #FBF3E2; color: #7a5a14; border-radius: 999px; padding: 6px 12px; font: 600 12.5px Inter, system-ui, sans-serif; cursor: pointer; }
+.cd-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 0; background: var(--c-card); }
+.cd-chips[hidden] { display: none; }
+.cd-chip { border: 1px solid var(--c-line); background: #fff; border-radius: 999px; padding: 6px 11px; font: 500 12.5px Inter, system-ui, sans-serif; color: var(--c-ink); cursor: pointer; }
+.cd-chip:hover { border-color: var(--c-plum); }
+.cd-form { display: flex; gap: 8px; align-items: flex-end; padding: 10px 14px 14px; background: var(--c-card); }
+.cd-input { flex: 1; resize: none; border: 1px solid var(--c-line); border-radius: 12px; padding: 10px 12px; font: 14px/1.4 Inter, system-ui, sans-serif; color: var(--c-ink); background: #fff; max-height: 96px; }
+.cd-input:focus { outline: none; border-color: var(--c-plum); box-shadow: 0 0 0 3px rgba(107, 45, 92, .15); }
+.cd-send { border: 0; border-radius: 12px; padding: 10px 16px; background: var(--c-coral); color: #fff; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; }
+.cd-send:disabled { opacity: .55; cursor: default; }
+
+/* phones: the open coach is a full-screen sheet */
+@media (max-width: 640px) {
+  .cd { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+  body.coach-open .cd { inset: 0; right: 0; bottom: 0; }
+  body.coach-open .cd-panel { width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
+  .cd-head { padding-top: max(12px, env(safe-area-inset-top)); }
+  .cd-form { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+  .cd-input { font-size: 16px; } /* avoids iOS zoom-on-focus */
+}
+@media (prefers-reduced-motion: no-preference) { .cd-panel { animation: cd-in .18s ease-out; } @keyframes cd-in { from { opacity: 0; transform: translateY(8px); } } }
