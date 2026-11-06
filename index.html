@@ -19,6 +19,7 @@
       <h1>Made of Her</h1>
       <p class="tagline">AI that points you back to real people. See yourself built from thousands of women who changed history and are changing it now. Tap any pixel to meet her.</p>
       <button id="startBtn" class="primary">Turn on camera</button>
+      <p class="fineprint">Scene matching sends a small snapshot from your camera to Claude every few seconds to recognise where you are. Nothing is saved. You can turn it off once the camera is on.</p>
       <p id="libStatus" class="status">Loading library…</p>
       <p id="camError" class="error" hidden></p>
     </div>
@@ -30,14 +31,10 @@
     <span id="count" class="pill"></span>
   </header>
 
-  <!-- Relevance: where are you? (scene) + near me (location) -->
+  <!-- Relevance: auto scene matching + near me -->
   <section id="relevance" hidden>
-    <div id="sceneChips" class="rel-row" role="group" aria-label="Where are you?"></div>
-    <div class="rel-row">
-      <button id="autoSceneBtn" title="Sends one small snapshot to Claude to guess your setting">✨ Detect my scene</button>
-      <button id="nearMeBtn" class="toggle" title="Uses your location in your browser only; it is never sent anywhere">📍 Women near me</button>
-    </div>
-    <p id="relHint"></p>
+    <button id="sceneBtn" class="toggle on" title="The mosaic favors women who fit the place behind you. Tap to turn off.">✨ Scene: looking…</button>
+    <button id="nearMeBtn" class="toggle" title="Uses your location in your browser only; it is never sent anywhere">📍 Women near me</button>
   </section>
 
   <!-- Controls -->

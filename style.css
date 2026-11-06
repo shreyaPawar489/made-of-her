@@ -49,7 +49,7 @@ h1 { font-size: clamp(44px, 9vw, 84px); margin: 0 0 12px; letter-spacing: -0.02e
 #controls input[type=range] { width: 96px; accent-color: var(--accent); }
 
 /* Story card */
-#card { position: fixed; right: 16px; top: calc(136px + env(safe-area-inset-top)); width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 232px); overflow: auto; z-index: 4;
+#card { position: fixed; right: 16px; top: calc(100px + env(safe-area-inset-top)); width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 196px); overflow: auto; z-index: 4;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 #cardClose { position: absolute; top: 6px; right: 6px; }
 .banner { font-size: 13px; color: var(--accent2); font-weight: 600; margin: 0 28px 12px 0; }
@@ -69,7 +69,7 @@ h1 { font-size: clamp(44px, 9vw, 84px); margin: 0 0 12px; letter-spacing: -0.02e
 .card-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 
 /* Stats */
-#stats { position: fixed; left: 16px; top: calc(136px + env(safe-area-inset-top)); z-index: 4; width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 13px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+#stats { position: fixed; left: 16px; top: calc(100px + env(safe-area-inset-top)); z-index: 4; width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 13px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 #statsText { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.6; white-space: pre; }
 .gaps-label { margin: 8px 0 4px; color: var(--muted); }
 .gaps { display: flex; gap: 4px; margin-bottom: 10px; }
@@ -133,11 +133,9 @@ body.card-open #hint, body.controls-open #hint, body.card-open .fab { display: n
   body.controls-open #flipFab { display: none; } /* Flip is in the bar already */
 }
 
-/* ---- relevance strip: scene chips + near me (P2) ---- */
-#relevance { position: fixed; left: 0; right: 0; top: calc(50px + env(safe-area-inset-top)); z-index: 3; padding: 0 max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
-#relevance .rel-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; pointer-events: auto; }
-#relevance .rel-row::-webkit-scrollbar { display: none; }
-#relevance button { flex: none; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: inherit; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); white-space: nowrap; }
+/* ---- relevance: scene pill + near me (P2) ---- */
+#relevance { position: fixed; left: 0; right: 0; top: calc(50px + env(safe-area-inset-top)); z-index: 3; padding: 0 max(16px, env(safe-area-inset-left)); display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+#relevance button { pointer-events: auto; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); color: inherit; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); white-space: nowrap; }
 #relevance button.on { background: var(--accent); color: #1a0f08; border-color: transparent; font-weight: 700; }
-#relHint { margin: 0; align-self: flex-start; font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(11,7,16,.72); pointer-events: none; }
-@media (max-width: 640px) { body.card-open #relevance { display: none; } #stats { top: calc(136px + env(safe-area-inset-top)); } }
+.fineprint { margin: 10px auto 0; max-width: 34ch; font-size: 12px; line-height: 1.4; opacity: .65; }
+@media (max-width: 640px) { body.card-open #relevance { display: none; } }

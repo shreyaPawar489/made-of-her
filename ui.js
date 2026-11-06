@@ -48,7 +48,7 @@
     try {
       await startCamera();
       started = true;
-      $('start').hidden = true; $('topbar').hidden = false; $('relevance').hidden = false;
+      $('start').hidden = true; $('topbar').hidden = false; $('relevance').hidden = false; setTimeout(detectScene, 1200);
       $('hint').hidden = false; setTimeout(() => $('hint').classList.add('fade'), 5000);
       if (matchMedia('(pointer: coarse)').matches) { $('flipFab').hidden = false; $('menuFab').hidden = false; }
       Mosaic.start();
@@ -90,48 +90,58 @@
   $('exportBtn').onclick = () => LibraryBuilder.exportFiles();
   $('rebuildBtn').onclick = async () => { await LibraryBuilder.clearCache(); location.search = '?rebuild=1'; };
 
-  // ---------- relevance: scene + location (relevance.js) ----------
-  const relHint = $('relHint');
-  function updateRelHint(msg) {
-    if (msg) { relHint.textContent = msg; return; }
-    const s = Relevance.scenes.find(x => x.id === Relevance.getScene());
-    const parts = [];
-    if (s) parts.push(`${s.label} scene`);
-    if (Relevance.hasLocation()) parts.push('women from near you');
-    relHint.textContent = parts.length ? `Showing more: ${parts.join(' + ')}` : 'Pick where you are, and the women in your mosaic will match it.';
+  // ---------- relevance: automatic scene matching + location (relevance.js) ----------
+  const sceneBtn = $('sceneBtn'), nearBtn = $('nearMeBtn');
+  let autoScene = true, sceneDown = false, sceneBusy = false, lastSig = null, lastCall = 0, lastSceneId = null;
+  const setSceneLabel = t => { sceneBtn.textContent = '✨ ' + t; };
+  const sceneName = id => { const s = Relevance.scenes.find(x => x.id === id); return s ? s.label : null; };
+  function applyScene(id) {
+    lastSceneId = id; Relevance.setScene(id);
+    setSceneLabel(id ? 'Scene: ' + sceneName(id) : 'Scene: no match');
   }
-  function setScene(id) {
-    Relevance.setScene(id);
-    document.querySelectorAll('#sceneChips button').forEach(b => b.classList.toggle('on', b.dataset.id === id));
-    updateRelHint();
+  const probe = document.createElement('canvas'); probe.width = probe.height = 16;
+  const pctx = probe.getContext('2d', { willReadFrequently: true });
+  function signature() { // 16x16 brightness fingerprint, to notice when the surroundings changed
+    pctx.drawImage(video, 0, 0, 16, 16);
+    const d = pctx.getImageData(0, 0, 16, 16).data, sig = [];
+    for (let i = 0; i < d.length; i += 4) sig.push((d[i] + d[i + 1] + d[i + 2]) / 3);
+    return sig;
   }
-  Relevance.scenes.forEach(s => {
-    const b = document.createElement('button'); b.textContent = s.label; b.dataset.id = s.id;
-    b.onclick = () => setScene(Relevance.getScene() === s.id ? null : s.id);
-    $('sceneChips').appendChild(b);
-  });
-  $('nearMeBtn').onclick = async () => {
-    const btn = $('nearMeBtn');
-    if (btn.classList.contains('on')) { Relevance.setLocation(null); btn.classList.remove('on'); return updateRelHint(); }
-    updateRelHint('Finding your location…');
-    try { await Relevance.locate(); btn.classList.add('on'); updateRelHint(); }
-    catch (e) { updateRelHint(e && e.code === 1 ? 'Location is blocked. Allow it in your browser settings to see women near you.' : 'Could not get your location.'); }
-  };
-  $('autoSceneBtn').onclick = async () => {
-    if (!video.videoWidth) return updateRelHint('Turn on the camera first.');
-    updateRelHint('Looking at your surroundings…');
+  async function detectScene() {
+    if (sceneBusy || sceneDown || !video.videoWidth) return;
+    sceneBusy = true; lastCall = Date.now();
     try {
       const c = document.createElement('canvas'), w = 384; c.width = w; c.height = Math.round(w * video.videoHeight / video.videoWidth);
       c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
       const r = await fetch('/api/scene', { method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ image: c.toDataURL('image/jpeg', 0.7).split(',')[1] }) });
-      if (!r.ok) throw new Error('unavailable');
-      const { scene } = await r.json();
-      if (scene && Relevance.scenes.some(s => s.id === scene)) { setScene(scene); }
-      else updateRelHint('Could not tell where you are. Pick a scene above.');
-    } catch (e) { updateRelHint('Auto-detect is not set up yet. Pick a scene above.'); }
+      if (r.status === 404 || r.status === 405 || r.status === 501) { sceneDown = true; Relevance.setScene(null); return setSceneLabel('Scene matching not set up'); }
+      if (!r.ok) throw new Error('upstream');
+      if (autoScene) applyScene((await r.json()).scene || null);
+    } catch (e) { if (autoScene && !lastSceneId) setSceneLabel('Scene: retrying…'); }
+    finally { sceneBusy = false; }
+  }
+  function sceneTick() { // runs every 4 s; only calls the API when the view changed (or every 45 s)
+    if (!started || !autoScene || sceneDown || Mosaic.isFrozen() || !video.videoWidth) return;
+    const sig = signature(), now = Date.now();
+    const changed = !lastSig || sig.reduce((a, v, i) => a + Math.abs(v - lastSig[i]), 0) / sig.length > 18;
+    if (changed) lastSig = sig;
+    if ((changed && now - lastCall > 8000) || now - lastCall > 45000) detectScene();
+  }
+  setInterval(sceneTick, 4000);
+  sceneBtn.onclick = () => {
+    if (sceneDown) return;
+    autoScene = !autoScene; sceneBtn.classList.toggle('on', autoScene);
+    if (autoScene) { setSceneLabel('Scene: looking…'); lastSig = null; detectScene(); }
+    else { Relevance.setScene(null); lastSceneId = null; setSceneLabel('Scene matching off'); }
   };
-  updateRelHint();
+  const flash = (btn, text, ms = 3500) => { const old = btn.textContent; btn.textContent = text; setTimeout(() => { btn.textContent = old; }, ms); };
+  nearBtn.onclick = async () => {
+    if (nearBtn.classList.contains('on')) { Relevance.setLocation(null); nearBtn.classList.remove('on'); return; }
+    const label = nearBtn.textContent; nearBtn.textContent = '📍 Finding you…';
+    try { await Relevance.locate(); nearBtn.classList.add('on'); nearBtn.textContent = label; }
+    catch (e) { nearBtn.textContent = label; flash(nearBtn, e && e.code === 1 ? '📍 Location blocked' : '📍 Could not locate you'); }
+  };
 
   let lensOn = true;
   document.addEventListener('keydown', e => {
