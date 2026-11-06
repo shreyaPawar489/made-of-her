@@ -1,6 +1,7 @@
 {
  "_note": "Used by coach.js (fallback steps when /api/coach fails) and api/experience.js (valid track ids). fields = library tile `field` values.",
  "stageGroups": {
+  "middle_school": "student",
   "high_school": "student",
   "college": "student",
   "early": "early",

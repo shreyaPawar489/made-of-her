@@ -4,18 +4,40 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const STAGES = [['high_school', 'High school'], ['college', 'College'], ['early', 'Early career'], ['mid', 'Mid career'], ['senior', 'Senior / leader'], ['returning', 'Returning to work'], ['switching', 'Switching careers']];
+  const STAGES = [['middle_school', 'Middle school'], ['high_school', 'High school'], ['college', 'College / university'], ['early', 'Early career'], ['mid', 'Mid career'], ['senior', 'Senior / leader'], ['returning', 'Returning to work'], ['switching', 'Switching careers']];
+  // Plain-language definitions shown behind the (i) buttons.
+  const STAGE_INFO = {
+    middle_school: 'Grades 6–8. Exploring what you like. Clubs, projects and curiosity all count.',
+    high_school: 'Grades 9–12. Classes, teams, jobs, volunteering and first internships.',
+    college: 'Any college, university, community college, trade school or grad program.',
+    early: 'Roughly your first 0–5 years of work, including internships and first jobs.',
+    mid: 'About 5–15 years in. You know your field and may lead projects or people.',
+    senior: 'Leading teams, organizations or a field. Often 15+ years in.',
+    returning: 'Coming back after time away: caregiving, health, travel, anything. Your past experience still counts.',
+    switching: 'Moving into a new field. Bring everything you learned in the old one.'
+  };
+  const GRADES = { middle_school: ['6th grade', '7th grade', '8th grade'], high_school: ['9th grade (freshman)', '10th grade (sophomore)', '11th grade (junior)', '12th grade (senior)'], college: ['1st year', '2nd year', '3rd year', '4th year or more', 'Graduate school'] };
+  const info = (id, text) => `<button type="button" class="info" data-info="${id}" aria-label="What does this mean?" aria-expanded="false">i</button><div class="info-box" id="info_${id}" hidden>${text}</div>`;
   const TRACKS_FALLBACK = { law: 'Law', medicine: 'Medicine & health', cs: 'Computer science & tech', engineering: 'Engineering & design', science: 'Science & research', space: 'Space & astronomy', business: 'Business & entrepreneurship', policy: 'Policy & public service', media: 'Media & writing', arts: 'Arts & creative work', education: 'Education & teaching', sports: 'Sports & athletics' };
   const withTimeout = (p, ms, fallback) => Promise.race([Promise.resolve(p).catch(() => fallback), new Promise(r => setTimeout(() => r(fallback), ms))]);
 
   let step = 0, stream = null;
-  const d = { name: '', age: '', city: '', stage: '', years: '', role: '', experienceText: '', goal: '', interests: [], photo: '', shareInNetwork: true, openToMentor: false };
+  const d = { name: '', age: '', city: '', stage: '', years: '', grade: '', role: '', experienceText: '', goal: '', interests: [], photo: '', shareInNetwork: true, openToMentor: false };
 
   function trackList() {
     const t = window.App && App.tracks && Object.keys(App.tracks).length ? App.tracks : null;
     return t ? Object.keys(t).map(k => [k, t[k].label || k]) : Object.entries(TRACKS_FALLBACK);
   }
-  const isStudent = () => d.stage === 'high_school' || d.stage === 'college';
+  const isStudent = () => d.stage === 'middle_school' || d.stage === 'high_school' || d.stage === 'college';
+
+  function expField() {
+    if (GRADES[d.stage]) {
+      const label = d.stage === 'college' ? 'Year in school' : 'Grade';
+      return `<label class="field"><span>${label}</span><select class="input" id="f_grade"><option value="">Choose…</option>${GRADES[d.stage].map(g => `<option${d.grade === g ? ' selected' : ''}>${g}</option>`).join('')}</select></label>`;
+    }
+    const what = d.stage === 'returning' ? 'Years of experience before your break' : d.stage === 'switching' ? 'Years of experience (any field)' : 'Years of experience';
+    return `<label class="field"><span>${what} ${info('years', 'Count every year you spent building skills: jobs, internships, research, volunteering, running a business, caregiving. A rough number is fine. It helps us find mentors a few steps ahead of you and peers right beside you.')}</span><input class="input" id="f_years" type="number" min="0" max="60" value="${esc(d.years)}" placeholder="0"></label>`;
+  }
 
   const STEPS = [
     { // 0 About you
@@ -28,12 +50,17 @@
       ok: () => d.name.length > 0
     },
     { // 1 Where you are now
-      html: () => `<h1>Where are you right now?</h1><p class="lead">No wrong answers. Your coach adapts to your stage.</p>
-        <div class="field"><span>Stage</span><div class="chips" id="f_stage">${STAGES.map(([k, l]) => `<button type="button" class="chip${d.stage === k ? ' on' : ''}" data-v="${k}">${l}</button>`).join('')}</div></div>
-        <div class="row"><label class="field"><span>Years of experience</span><input class="input" id="f_years" type="number" min="0" max="60" value="${esc(d.years)}" placeholder="0"></label>
-        <label class="field"><span>Current role or school</span><input class="input" id="f_role" value="${esc(d.role)}" placeholder="${isStudent() ? 'Junior at Lincoln High' : 'Paralegal at …'}"></label></div>`,
-      mount: () => single('f_stage', v => { d.stage = v; }),
-      read: () => { d.years = $('f_years').value; d.role = $('f_role').value.trim(); },
+      html: () => `<h1>Where are you right now?</h1><p class="lead">Middle schooler or CEO, there's a place for you here. Your coach and your matches adapt to your stage.</p>
+        <div class="field"><span>Stage ${info('stages', '<dl>' + STAGES.map(([k, l]) => `<dt>${l}</dt><dd>${STAGE_INFO[k]}</dd>`).join('') + '</dl>')}</span><div class="chips" id="f_stage">${STAGES.map(([k, l]) => `<button type="button" class="chip${d.stage === k ? ' on' : ''}" data-v="${k}" title="${esc(STAGE_INFO[k])}">${l}</button>`).join('')}</div></div>
+        ${d.stage ? `<div class="row">${expField()}
+        <label class="field"><span>${isStudent() ? 'School' : 'Current role'}</span><input class="input" id="f_role" value="${esc(d.role)}" placeholder="${isStudent() ? (d.stage === 'college' ? 'Pre-law at UC Berkeley' : 'Lincoln Middle School') : 'Paralegal at …'}"></label></div>` : ''}`,
+      mount: () => single('f_stage', v => { STEPS[1].read(); d.stage = v; render(); }),
+      read: () => {
+        const g = $('f_grade'), y = $('f_years'), r = $('f_role');
+        if (g) { d.grade = g.value; d.years = '0'; }
+        if (y) { d.years = y.value; d.grade = ''; }
+        if (r) d.role = r.value.trim();
+      },
       ok: () => !!d.stage
     },
     { // 2 What you've done
@@ -142,7 +169,7 @@
     S.mount && S.mount();
     $('obBack') && ($('obBack').onclick = () => { S.read && S.read(); step--; render(); });
     $('obNext').onclick = () => { S.read && S.read(); if (!S.ok()) return; if (step < STEPS.length - 1) { step++; render(); } else finish(); };
-    $('onboarding').querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', validate));
+    $('onboarding').querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', validate));
     $('onboarding').querySelectorAll('input:not([type=checkbox])').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') $('obNext').click(); }));
     const first = $('onboarding').querySelector('input:not([type=checkbox]), textarea'); if (first && step < 4) first.focus();
     validate();
@@ -157,7 +184,7 @@
   async function finish() {
     const profile = {
       name: d.name, age: d.age ? +d.age : null, city: d.city, coords: null,
-      stage: d.stage, years: +d.years || 0, role: d.role,
+      stage: d.stage, years: +d.years || 0, grade: d.grade || '', role: d.role,
       experienceText: d.experienceText, goal: d.goal, interests: d.interests.slice(), track: d.interests[0],
       openToMentor: d.openToMentor, shareInNetwork: d.shareInNetwork, photo: d.photo
     };
@@ -197,6 +224,13 @@
     window.Network && Network.upsertMe && Network.upsertMe();
     setTimeout(() => { window.openCoach && openCoach(); }, 400);
   }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.info'); if (!b) return;
+    e.preventDefault();
+    const box = document.getElementById('info_' + b.dataset.info); if (!box) return;
+    box.hidden = !box.hidden; b.setAttribute('aria-expanded', String(!box.hidden));
+  });
 
   window.Onboarding = {
     start() {
