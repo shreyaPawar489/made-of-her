@@ -27,12 +27,12 @@
     const s = me(), p = s.profile;
     if (!p || !p.shareInNetwork || !db()) return null;
     // wait for the portrait to draw, or the snapshot is a black square
-    if (window.avatarPortrait && avatarPortrait.ready) await Promise.race([avatarPortrait.ready, new Promise(r => setTimeout(r, 3000))]).catch(() => {});
+    if (window.avatarPortrait && avatarPortrait.ready) await Promise.race([avatarPortrait.ready, new Promise(r => setTimeout(r, 10000))]).catch(() => {});
     const pr = (window.App && App.progress) ? App.progress() : { pct: 0, women: 0 };
     let avatar = null;
     try {
       if (window.avatarPortrait && avatarPortrait.snapshot) {
-        for (const px of [320, 256, 192, 128, 96]) { avatar = avatarPortrait.snapshot(px); if (avatar.length < 39000) break; }
+        for (const px of [320, 256, 192, 128, 96]) { avatar = avatarPortrait.snapshot(px); if (!avatar || avatar.length < 39000) break; }
       }
     } catch (e) { /* not ready */ }
     const row = {
@@ -308,6 +308,9 @@
     if (window.JourneyLib && JourneyLib.ready) JourneyLib.ready.then(() => { renderCard(); if ($('network') && !$('network').hidden) renderPage(); });
     pollT = setInterval(load, 20000);
   }
+  // sample members' mosaics finish drawing in the background
+  let avT = null;
+  window.addEventListener('moh-avatars', () => { clearTimeout(avT); avT = setTimeout(() => { renderCard(); if ($('network') && !$('network').hidden) renderPage(); }, 150); });
   window.addEventListener('jstore', e => {
     if (!started) return;
     if (e.detail.what === 'profile') { upsertSoon(); setTimeout(renderCard, 100); }

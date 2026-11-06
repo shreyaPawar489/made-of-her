@@ -101,7 +101,7 @@
         for (let i = 0; i < CELLS; i++) {
           const cx = (i % G + 0.5) / G - 0.5, cy = ((i / G | 0) + 0.5) / G;
           const head = Math.hypot(cx, (cy - 0.38) * 0.8) < 0.2, body = cy > 0.7 && Math.abs(cx) < 0.38 - (1 - cy) * 0.3;
-          const v = head ? 200 : body ? 120 : 235;
+          const v = head ? 205 : body ? 70 : 150;   // enough contrast that the women picked for it still read as a portrait
           colors[i * 3] = v; colors[i * 3 + 1] = v * 0.9; colors[i * 3 + 2] = v * 0.85; labs[i] = rgb2lab(v, v * 0.9, v * 0.85);
         }
       }).then(() => { assign(); draw(); });
@@ -163,15 +163,16 @@
         const k = Math.min(1, age / 260), sc = 0.35 + 0.65 * k, o = (cs - cs * sc) / 2;
         if (k < 1) { animating = true; const l = Math.round((0.299 * r + 0.587 * g + 0.114 * b) * 0.9); ctx.fillStyle = `rgb(${l},${l},${l})`; ctx.fillRect(x, y, cs + 0.5, cs + 0.5); }
         Lib.drawTile(ctx, t, x + o, y + o, cs * sc + 0.5, cs * sc + 0.5);
-        ctx.globalAlpha = 0.3; ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`; ctx.fillRect(x + o, y + o, cs * sc + 0.5, cs * sc + 0.5);
+        if (opts.tint !== false) { ctx.globalAlpha = 0.3; ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`; ctx.fillRect(x + o, y + o, cs * sc + 0.5, cs * sc + 0.5); }
         if (age < 900) { animating = true; ctx.globalAlpha = 1 - age / 900; ctx.strokeStyle = '#C9973A'; ctx.lineWidth = Math.max(1, cs * 0.12); ctx.strokeRect(x + 1, y + 1, cs - 2, cs - 2); }
         ctx.globalAlpha = 1;
       }
+      if (!inst.drawn) { inst.drawn = true; setTimeout(() => window.refreshMyAvatars && refreshMyAvatars(), 50); }
       if (animating) { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }
     }
 
     const inst = {
-      ready: null,
+      ready: null, drawn: false,
       setPhoto(src) { return (inst.ready = Lib.ready.then(() => setPhoto(src))); },
       setAchievements(list) { eff = effective(list); assign(); draw(); return inst; },
       // pop in the cells of the last n effective achievements (n = 1 after logging; n = all past at onboarding)
@@ -190,6 +191,7 @@
         return { pct: Math.round(unlocked / CELLS * 100), women, tiles, achievements: eff.length };
       },
       snapshot(px = 96) {
+        if (!inst.drawn) return null;   // not painted yet: a snapshot would be a black square
         const c = document.createElement('canvas'); c.width = c.height = px;
         c.getContext('2d').drawImage(canvas, 0, 0, px, px);
         return c.toDataURL('image/jpeg', 0.7);
@@ -238,12 +240,13 @@
   // ---------- profile pictures = your mosaic ----------
   // Any element with [data-my-avatar] shows the current snapshot of your portrait (falls back to its text, e.g. initials).
   function refreshMyAvatars() {
-    const src = [window.avatarPortrait, window.bigPortrait].find(x => x && typeof x.snapshot === 'function' && x._canvas && x._canvas.width);
+    const src = [window.avatarPortrait, window.bigPortrait].find(x => x && typeof x.snapshot === 'function' && x.drawn);
     if (!src) return;
-    src.ready.then(() => apply(src));
+    apply(src);
   }
   function apply(src) {
-    let url; try { url = src.snapshot(144); } catch (e) { return; }
+    let url; try { url = src.snapshot(192); } catch (e) { return; }
+    if (!url) return;
     document.querySelectorAll('[data-my-avatar]').forEach(el => {
       if (el.tagName === 'IMG') el.src = url;
       else { el.style.backgroundImage = 'url(' + url + ')'; el.classList.add('has-mosaic'); }
@@ -256,9 +259,26 @@
 
   // Members without a portrait (e.g. sample members): a small mosaic of real women from their path, filled to their %.
   const memberCache = new Map();
+  // Members with no saved picture (samples): build a real portrait-style mosaic (silhouette filled to her %) in the
+  // background, then fire 'moh-avatars' so lists redraw. Until it's ready, the quick 5x5 grid below stands in.
+  const building = new Set();
+  function buildMemberPortrait(m, key) {
+    if (building.has(key)) return; building.add(key);
+    const cv = document.createElement('canvas'); cv.width = cv.height = 240;
+    const n = Math.max(1, Math.round((m.pct || 30) / 5)), tracks = [m.track].concat(m.interests || []).filter(Boolean);
+    const ach = Array.from({ length: n }, (_, i) => ({ text: '', track: tracks[i % (tracks.length || 1)] || 'law', past: false }));
+    const p = create(cv, { seed: strHash(String(m.id || m.name || '')), tint: false });
+    p.ready.then(() => {
+      p.setAchievements(ach);
+      const url = p.snapshot(240); p.destroy();
+      if (url) { memberCache.set(key, url); window.dispatchEvent(new Event('moh-avatars')); }
+    });
+  }
   Lib.memberAvatar = (m, size = 88) => {
     const key = (m.id || m.name) + '|' + (m.track || '') + '|' + (m.pct || 0);
     if (memberCache.has(key)) return memberCache.get(key);
+    buildMemberPortrait(m, key);
+    const qk = key + '|quick'; if (memberCache.has(qk)) return memberCache.get(qk);
     if (!Lib.atlas) return null;
     const cands = Lib.candidates(m.track || 'law'); if (!cands.length) return null;
     let h = 2166136261; for (const ch of String(m.id || m.name || '')) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
@@ -271,7 +291,7 @@
       Lib.drawTile(g, cands[(rand() * cands.length) | 0], x, y, cs, cs);
       if (k >= filled) { g.fillStyle = 'rgba(232,222,212,.82)'; g.fillRect(x, y, cs, cs); }
     });
-    const url = c.toDataURL('image/jpeg', 0.8); memberCache.set(key, url); return url;
+    const url = c.toDataURL('image/jpeg', 0.8); memberCache.set(qk, url); return url;
   };
   window.addEventListener('jstore', e => { if (['profile', 'achievements', 'reset'].includes(e.detail.what)) mountFromStore(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountFromStore); else setTimeout(mountFromStore);
