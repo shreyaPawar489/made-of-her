@@ -74,6 +74,13 @@ Never edit another person's file without telling them. If a contract below must 
   ]
 }
 ```
+**Additive fields (P2, optional — older readers ignore them):**
+- `memo` — longer story shown on the card (~500–900 chars: what she did, her impact). People: Wikipedia intro text. Headlines: the one-line `desc` + Wikipedia context.
+- `memoSource` — URL the memo came from (Wikipedia → show "Summary from Wikipedia (CC BY-SA)").
+- `impact` — one line on why her field matters for education / empowerment / opportunity (field-level context, not a claim about her personally).
+- `themes` — array of tags for matching the viewer's scene. Settings: `classroom lab stage courtroom newsroom clinic field space studio library office government community`. Topics: `education science leadership justice arts health sports business technology media design`. Engine can boost tiles whose `themes` include the detected scene.
+- Note: these live only in the committed `library/tiles.json` (generated from Wikipedia after the build). `builder.js` does **not** produce them, so don't replace `library/` with a fresh export unless the memo step is re-run.
+
 `id` must equal the tile's index in the atlas.
 
 ## 5. CONTRACT B — engine API (P1 implements, P3 calls)

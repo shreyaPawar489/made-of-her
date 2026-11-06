@@ -177,6 +177,14 @@
     else { if (tile.year) meta.push(tile.era === 'recent' ? tile.year : 'Born ' + tile.year); if (tile.field) meta.push(tile.field); }
     $('cardMeta').textContent = meta.filter(Boolean).join(' · ');
     $('cardDesc').textContent = tile.desc ? tile.desc.charAt(0).toUpperCase() + tile.desc.slice(1) : '';
+    // Longer memo (what she did + why it matters). Fields come from library/tiles.json; all optional.
+    const memoWrap = $('cardMemoWrap');
+    memoWrap.hidden = !(tile.memo || tile.impact);
+    $('cardMemo').textContent = tile.memo || '';
+    $('cardImpact').textContent = tile.impact ? 'Why it matters: ' + tile.impact : '';
+    $('cardImpact').hidden = !tile.impact;
+    $('cardCredit').textContent = tile.memoSource && /wikipedia\.org/.test(tile.memoSource) ? 'Summary from Wikipedia (CC BY-SA)' : '';
+    memoWrap.scrollTop = 0; $('card').scrollTop = 0;
     const link = $('cardLink');
     if (tile.link && tile.link !== '#') { link.href = tile.link; link.hidden = false; } else link.hidden = true;
     $('card').hidden = false;
