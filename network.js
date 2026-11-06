@@ -8,7 +8,15 @@
   const GROUP = { middle_school: 'student', high_school: 'student', college: 'student', early: 'early', switching: 'early', returning: 'early', mid: 'experienced', senior: 'experienced' };
   const db = () => window.JDB && JDB.ready && JDB.ready();
 
-  let members = [], conns = [], pollT = null, upT = null, started = false;
+  let members = [], conns = [], msgs = [], msgsOn = null, pollT = null, upT = null, started = false, threadT = null;
+  const SEEN_KEY = 'moh.seen.v1';
+  const seen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (e) { return {}; } };
+  const markSeen = cid => { try { const s = seen(); s[cid] = new Date().toISOString(); localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch (e) { /* private mode */ } };
+  // First-conversation prompts: the hard part of reaching out is knowing what to say.
+  const PROMPTS = {
+    mentor: ['What do you wish you knew at my stage?', 'What was the hardest step on your path, and what got you through it?', 'Could we do a 20-minute video chat sometime in the next two weeks?'],
+    peer: ['What are you working on this month?', 'Want to swap one goal each and check in next Friday?', 'Any program, class or club you\'d recommend?']
+  };
 
   const me = () => JStore.get();
   const myId = () => me().memberId;
@@ -42,8 +50,21 @@
     ]);
     if (m) members = m.filter(x => x.id !== id);
     if (c) conns = c;
+    await loadMessages();
     renderCard(); renderBadge();
     if ($('network') && !$('network').hidden) renderPage();
+  }
+
+  async function loadMessages() {
+    const ids = conns.filter(c => c.status === 'accepted').map(c => c.id);
+    if (!ids.length || msgsOn === false) return;
+    const r = await JDB.select('messages', 'select=*&connection_id=in.(' + ids.join(',') + ')&order=created_at.asc&limit=500');
+    if (r) { msgs = r; msgsOn = true; } else if (msgsOn === null) msgsOn = false; // table not created yet (db/messages.sql)
+  }
+  const thread = cid => msgs.filter(x => String(x.connection_id) === String(cid));
+  function unread(cid) {
+    const last = thread(cid).filter(x => x.from_id !== myId()).pop();
+    return !!last && (!seen()[cid] || last.created_at > seen()[cid]);
   }
 
   // ---------- matching ----------
@@ -76,7 +97,7 @@
   function action(m) {
     const c = connWith(m.id);
     if (!c) return `<button class="btn small" data-connect="${m.id}">Connect</button>`;
-    if (c.status === 'accepted') return '<span class="pill">Connected</span>';
+    if (c.status === 'accepted') return `<button class="btn small ghost" data-thread="${c.id}">Message${unread(c.id) ? ' <span class="dot"></span>' : ''}</button>`;
     if (c.to_id === myId()) return `<button class="btn small coral" data-accept="${c.id}">Accept</button>`;
     return '<span class="pill">Pending</span>';
   }
@@ -96,7 +117,7 @@
   }
 
   function renderBadge() {
-    const n = conns.filter(c => c.to_id === myId() && c.status === 'pending').length;
+    const n = conns.filter(c => c.to_id === myId() && c.status === 'pending').length + conns.filter(c => c.status === 'accepted' && unread(c.id)).length;
     const b = $('netBadge'); if (!b) return;
     b.hidden = !n; b.textContent = n;
   }
@@ -117,6 +138,11 @@
       section('Mentors on your path', mentors.slice(0, 8).map(m => person(m)), 'No mentors on your path yet.') +
       section('Peers at your stage', peers.slice(0, 8).map(m => person(m)), 'No peers yet. Invite a friend!') +
       section('Your connections', mine.map(m => person(m)).concat(sent.map(m => person(m))), 'Connect with a mentor or peer to start.', 'full') +
+      `<div class="card full how"><h3>How connecting works</h3><ol>
+        <li><b>Ask.</b> Send a short note to a mentor further along or a peer at your stage.</li>
+        <li><b>Talk.</b> Once she accepts, message here and set up a 20-minute video call. No phone numbers or emails needed.</li>
+        <li><b>Grow together.</b> Log what you did after the chat. It adds a woman to both of your portraits.</li></ol>
+        <p class="muted" style="margin:8px 0 0"><b>Coming next:</b> Circles of six women at the same stage who meet once a month, mentor office hours, and verified mentors.</p></div>` +
       '</div>';
   }
 
@@ -141,13 +167,61 @@
       renderCard(); if (!$('network').hidden) renderPage();
     };
   }
+  // ---------- messages + video chat ----------
+  function openThread(cid) {
+    const c = conns.find(x => String(x.id) === String(cid)); if (!c) return;
+    const m = memberById(c.from_id === myId() ? c.to_id : c.from_id); if (!m) return;
+    const first = cleanName(m.name).split(' ')[0];
+    const isMentor = (+m.years || 0) >= (+(me().profile || {}).years || 0) + 5;
+    const box = App.modal(`<div class="thread-head">${avatar(m)}<div><h3 style="margin:0">${esc(cleanName(m.name))}</h3><small class="muted">${esc(sub(m))}</small></div></div>
+      <div class="thread" id="thList"></div>
+      ${msgsOn === false ? '<p class="empty">Messaging is switching on soon. For now, your note and her reply live in the request.</p>' : `
+      <div class="chips th-prompts">${PROMPTS[isMentor ? 'mentor' : 'peer'].map(q => `<button type="button" class="chip small" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+      <div class="th-form"><textarea class="input" id="thInput" maxlength="1000" placeholder="Write to ${esc(first)}…"></textarea></div>
+      <div class="actions"><button class="btn ghost small" id="thCall" title="Creates a free video room link (Jitsi) and sends it">📹 Plan a video chat</button><span style="flex:1"></span><button class="btn link" data-close>Close</button><button class="btn" id="thSend">Send</button></div>`}`);
+    box.classList.add('modal-thread');
+    const draw = () => {
+      const list = box.querySelector('#thList'); if (!list) return;
+      const t = thread(cid);
+      const head = c.note ? `<div class="msg ${c.from_id === myId() ? 'me' : 'them'}"><small>Request note</small>${esc(c.note)}</div>` : '';
+      list.innerHTML = head + (t.length ? t.map(x => `<div class="msg ${x.from_id === myId() ? 'me' : 'them'}">${linkify(x.body)}<small>${fmtTime(x.created_at)}</small></div>`).join('')
+        : `<p class="empty">You're connected. Say hi to ${esc(first)}, or pick a question below.</p>`);
+      list.scrollTop = list.scrollHeight;
+      markSeen(cid); renderBadge();
+    };
+    const send = async body => {
+      body = String(body || '').trim().slice(0, 1000); if (!body) return;
+      const b = box.querySelector('#thSend'); if (b) b.disabled = true;
+      const r = await JDB.insert('messages', { connection_id: c.id, from_id: myId(), body });
+      if (b) b.disabled = false;
+      if (r && r[0]) { msgs.push(r[0]); const i = box.querySelector('#thInput'); if (i) i.value = ''; draw(); }
+      else App.toast('Could not send. Try again.');
+    };
+    draw();
+    if (msgsOn !== false) {
+      box.querySelector('#thSend').onclick = () => send(box.querySelector('#thInput').value);
+      box.querySelector('#thInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
+      box.querySelectorAll('[data-q]').forEach(q => q.onclick = () => { const i = box.querySelector('#thInput'); i.value = q.dataset.q; i.focus(); });
+      box.querySelector('#thCall').onclick = () => {
+        const room = 'MadeOfHer-' + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
+        send(`Want to do a 20-minute video chat? Here's a room we can both open any time, no account needed: https://meet.jit.si/${room}\nWhat day works for you?`);
+      };
+      box.querySelector('#thInput').focus();
+    }
+    clearInterval(threadT);
+    threadT = setInterval(async () => { if (!document.body.contains(box)) { clearInterval(threadT); renderCard(); if (!$('network').hidden) renderPage(); return; } await loadMessages(); draw(); }, 5000);
+  }
+  function linkify(t) { return esc(t).replace(/https:\/\/meet\.jit\.si\/[A-Za-z0-9-]+/g, u => `<a href="${u}" target="_blank" rel="noopener" class="call-link">📹 Join video chat</a>`).replace(/\n/g, '<br>'); }
+  function fmtTime(ts) { try { return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+
   async function accept(cid) {
     const r = await JDB.update('connections', 'id=eq.' + cid, { status: 'accepted' });
-    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; App.toast('Connected!'); }
+    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; App.toast('Connected! Say hi.'); setTimeout(() => openThread(cid), 400); }
     renderCard(); renderBadge(); if (!$('network').hidden) renderPage();
   }
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-connect]'); if (c) { e.preventDefault(); openConnect(c.dataset.connect); return; }
+    const t = e.target.closest('[data-thread]'); if (t) { e.preventDefault(); openThread(t.dataset.thread); return; }
     const a = e.target.closest('[data-accept]'); if (a) { e.preventDefault(); a.disabled = true; accept(a.dataset.accept); }
   });
 
@@ -164,7 +238,7 @@
     if (e.detail.what === 'achievements') upsertSoon();
   });
 
-  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard };
+  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard, openThread };
   // app.js may have called showApp() before this file loaded
   if (window.App && App.shown) init();
 })();
