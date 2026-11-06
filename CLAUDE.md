@@ -10,7 +10,7 @@ Files that exist and work: `index.html`, `style.css`, `ui.js`, `engine.js`, `bui
 
 ### Remaining tasks (do these, in order)
 **Shreya (P1, engine.js):** test on real camera; tune defaults (tileSize/strength/mode) for the most obvious image; check fps on a phone; deploy to GitHub Pages (HTTPS) once pushed.
-**Emma (P2, builder.js + data/):** open the app, let the library build (~1–3 min), check the portraits look right (crop/faces); **Download library pack → commit to `library/`**; open Stats and add photos for the gap colors (add occupations to `OCC` in builder.js or more `headlines.json` entries); spot-check facts/links in `headlines.json` (Tennessee governor is "projected").
+**Emma (P2, builder.js + data/):** ✅ DONE (~10:30): library built (2,056 tiles) and committed to `library/`, portraits checked, headlines fact-checked (Tennessee governor updated: Blackburn won). Remaining: optional extra photos for saturated blue/red gap colors (not skin tones, low priority).
 **Niranjan (P3, ui.js/style.css + pitch):** polish the start screen + card on a phone; then build the deck + demo-video script; record the demo by 12:00.
 
 ### Staying in sync (every Claude session MUST do this)
