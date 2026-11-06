@@ -112,8 +112,8 @@
     const list = s.achievements.slice().reverse();
     $('meList').innerHTML = '<h3>What you\'re made of</h3>' + (list.length ? '<ul class="ach-list">' + list.map(a => {
       const t = L && L.tile && a.womanId != null ? L.tile(a.womanId) : null;
-      return '<li>' + (t ? '<img alt="" src="' + L.thumb(t, 72) + '">' : '') + '<div><b>' + esc(a.text) + '</b>' +
-        (t ? '<br><small class="muted">→ ' + esc(t.name) + (a.past ? ' · ★ from your experience' : '') + '</small>' : '') + '</div></li>';
+      return '<li' + (t ? ' class="clickable" tabindex="0" role="button" aria-label="Meet ' + esc(t.name) + '" data-aid="' + esc(a.id) + '"' : '') + '>' + (t ? '<img alt="" src="' + L.thumb(t, 72) + '">' : '') + '<div><b>' + esc(a.text) + '</b>' +
+        (t ? '<br><small class="muted">→ ' + esc(t.name) + (a.past ? ' · ★ from your experience' : '') + '</small>' : '') + '</div>' + (t ? '<span class="ach-go" aria-hidden="true">→</span>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="empty">Nothing yet. Log your first step and watch a woman appear in your portrait.</p>');
   }
   App.renderMe = renderMe;
@@ -140,6 +140,29 @@
     return '<div class="why">' + step + '<br>' + body + '</div>';
   }
 
+  // Shows a woman's card (photo, who she is, why she's in your portrait) in #meTile. Used by tapping a tile AND by
+  // clicking a row in "What you're made of".
+  function openTileCard(t, a, scroll) {
+    const box = $('meTile'), L = window.JourneyLib;
+    box.hidden = false;
+    box.innerHTML = '<div class="tilecard"><img alt="" src="' + L.thumb(t, 176) + '"><div><h3>' + esc(t.name) + '</h3>' +
+      '<div class="muted">' + esc(t.field || '') + (t.year ? ' · b. ' + esc(t.year) : '') + '</div>' +
+      '<div>' + esc(t.desc || '') + '</div>' +
+      (t.link ? '<a href="' + esc(t.link) + '" target="_blank" rel="noopener">Read her story ↗</a>' : '') + '</div></div>' +
+      (a ? whyHtml(t, a) : '');
+    if (scroll) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function openFromList(li) {
+    const id = li && li.getAttribute('data-aid'); if (!id) return;
+    const a = JStore.get().achievements.find(x => String(x.id) === id), L = window.JourneyLib;
+    const t = a && L && L.tile && a.womanId != null ? L.tile(a.womanId) : null;
+    if (t) openTileCard(t, a, true);
+  }
+  document.addEventListener('click', e => { const li = e.target.closest && e.target.closest('#meList li.clickable'); if (li) openFromList(li); });
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('#meList li.clickable')) { e.preventDefault(); openFromList(e.target); }
+  });
+
   function showTile(e) {
     if (!window.bigPortrait || !bigPortrait.cellAt) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -150,14 +173,7 @@
       box.innerHTML = '<p class="empty">This part of you is still gray. Log a step to fill it with a woman who went first.</p>';
       return;
     }
-    const t = hit.tile, a = hit.achievement, L = window.JourneyLib;
-    box.hidden = false;
-    box.innerHTML = '<div class="tilecard"><img alt="" src="' + L.thumb(t, 176) + '"><div><h3>' + esc(t.name) + '</h3>' +
-      '<div class="muted">' + esc(t.field || '') + (t.year ? ' · b. ' + esc(t.year) : '') + '</div>' +
-      '<div>' + esc(t.desc || '') + '</div>' +
-      (t.link ? '<a href="' + esc(t.link) + '" target="_blank" rel="noopener">Read her story ↗</a>' : '') + '</div></div>' +
-      (a ? whyHtml(t, a) : '');
-    if (window.matchMedia('(max-width: 799px)').matches) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    openTileCard(hit.tile, hit.achievement, window.matchMedia('(max-width: 799px)').matches);
   }
 
   // ---------- show the app ----------

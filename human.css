@@ -41,3 +41,10 @@ body { background: var(--bg); }
 .person img, .person .ph { width: 52px; height: 52px; border-radius: 8px; }
 .badge { border-radius: 4px; }
 .ach-card { border: 1px solid var(--line); }
+
+/* "What you're made of": rows open her card */
+.ach-list li.clickable { cursor: pointer; border-radius: 8px; transition: background .12s; position: relative; }
+.ach-list li.clickable:hover, .ach-list li.clickable:focus-visible { background: rgba(107,45,92,.07); outline: none; }
+.ach-list li.clickable:focus-visible { box-shadow: 0 0 0 2px var(--plum); }
+.ach-go { margin-left: auto; align-self: center; color: var(--plum); font-weight: 700; opacity: .55; padding: 0 6px; }
+.ach-list li.clickable:hover .ach-go { opacity: 1; }
