@@ -30,7 +30,11 @@
     if (window.avatarPortrait && avatarPortrait.ready) await Promise.race([avatarPortrait.ready, new Promise(r => setTimeout(r, 3000))]).catch(() => {});
     const pr = (window.App && App.progress) ? App.progress() : { pct: 0, women: 0 };
     let avatar = null;
-    try { if (window.avatarPortrait && avatarPortrait.snapshot) avatar = avatarPortrait.snapshot(96); } catch (e) { /* not ready */ }
+    try {
+      if (window.avatarPortrait && avatarPortrait.snapshot) {
+        for (const px of [320, 256, 192, 128, 96]) { avatar = avatarPortrait.snapshot(px); if (avatar.length < 39000) break; }
+      }
+    } catch (e) { /* not ready */ }
     const row = {
       id: s.memberId, name: (p.name || 'Member').slice(0, 60), city: (p.city || '').slice(0, 80) || null,
       track: p.track || (p.interests && p.interests[0]) || 'law', interests: p.interests || [],
@@ -106,7 +110,7 @@
     return '<span class="pill">Pending</span>';
   }
   function person(m, extra) {
-    return `<div class="person"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
+    return `<div class="person" data-member="${m.id}"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
       <small>${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${extra || ''}</div>${action(m)}</div>`;
   }
 
@@ -178,8 +182,10 @@
     };
   }
   // ---------- profile: full once connected, a short card before ----------
-  function openProfile(id) {
-    const m = memberById(id); if (!m) return;
+  async function openProfile(id) {
+    let m = memberById(id);
+    if (!m && db()) { const r = await JDB.select('members', COLS + '&id=eq.' + encodeURIComponent(id)); if (r && r[0]) { m = r[0]; members.push(m); } }
+    if (!m) { App.toast('Could not load her profile. Try again.'); return; }
     const c = connWith(id), name = cleanName(m.name), first = name.split(' ')[0];
     const head = `<div class="prof-head">${avatar(m)}<div><h3>${esc(name)}${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</h3>
       <div class="muted">${esc(sub(m))}</div>${m.open_to_mentor ? '<span class="mentor-tag">★ Open to mentoring</span>' : ''}</div></div>`;
@@ -201,6 +207,9 @@
       <p class="muted prof-since">✓ Connected${since ? ' · ' + since : ''}</p>
       <div class="actions"><button class="btn link" data-close>Close</button><button class="btn" data-thread="${c.id}">Message ${esc(first)}</button></div></div>`);
     box.classList.add('modal-prof');
+    // older members saved a tiny 96px picture: don't blow it up past ~2x, or it turns to pixels
+    const pic = box.querySelector('.prof-head img');
+    if (pic) { const fit = () => { if (pic.naturalWidth && pic.naturalWidth < 200) pic.style.maxWidth = Math.max(160, pic.naturalWidth * 2) + 'px'; }; pic.complete ? fit() : pic.onload = fit; }
   }
 
   // ---------- search (anyone in the network; results are short cards) ----------
@@ -285,6 +294,8 @@
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-connect]'); if (c) { e.preventDefault(); openConnect(c.dataset.connect); return; }
     const pf = e.target.closest('[data-profile]'); if (pf) { e.preventDefault(); openProfile(pf.dataset.profile); return; }
+    const row = e.target.closest('.person[data-member]');
+    if (row && !e.target.closest('button, a')) { openProfile(row.dataset.member); return; }
     const t = e.target.closest('[data-thread]'); if (t) { e.preventDefault(); openThread(t.dataset.thread); return; }
     const a = e.target.closest('[data-accept]'); if (a) { e.preventDefault(); a.disabled = true; accept(a.dataset.accept); }
   });
