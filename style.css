@@ -60,7 +60,8 @@ h1 { font-size: clamp(44px, 9vw, 84px); margin: 0 0 12px; letter-spacing: -0.02e
 .meta { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
 #cardDesc { margin: 0 0 10px; line-height: 1.45; }
 #cardLink { color: var(--accent); font-weight: 600; text-decoration: none; }
-#cardMemo { margin: 14px 0 10px; font-size: 14px; line-height: 1.55; opacity: .92; }
+#cardMemo { margin: 12px 0 10px; font-size: 14px; line-height: 1.5; opacity: .92; }
+#cardImpact strong { display: block; margin-bottom: 2px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
 #cardImpact { margin: 0 0 8px; padding: 8px 12px; border-left: 3px solid var(--accent); background: rgba(255,255,255,.06); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.45; }
 #cardCredit { margin: 0 0 6px; font-size: 11px; opacity: .55; }
 .also { margin: 14px 0 6px; font-size: 13px; color: var(--muted); }

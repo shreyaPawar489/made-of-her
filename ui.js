@@ -202,7 +202,7 @@
     if (tap && started && e.type === 'pointerup') {
       const tile = Mosaic.tileAt(e.clientX, e.clientY);
       cancelTap();
-      if (tile) tapTimer = setTimeout(() => { tapTimer = null; setFrozen(true); openCard(tile, true); }, 260);
+      if (tile) tapTimer = setTimeout(() => { tapTimer = null; setFrozen(true); openCard(tile, true, true); }, 260);
     }
   }
   canvas.addEventListener('pointerup', endPointer);
@@ -210,7 +210,41 @@
   canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') Mosaic.setLens(null); });
 
   // ---------- story card ----------
-  function openCard(tile, refreshFrame) {
+  // One short sentence from the long Wikipedia memo: drop (dates/aliases), keep the first sentence.
+  function shortMemo(tile) {
+    if (tile.kind === 'headline' || !tile.memo) return '';
+    const m = tile.memo.replace(/\s*\([^)]*\)/g, '').replace(/\s+,/g, ',').trim();
+    const first = (m.match(/^.{30,}?[.!?](?=\s+[A-Z]|$)/) || [m])[0];
+    return first.length > 170 ? first.slice(0, 167).replace(/\s+\S*$/, '') + '…' : first;
+  }
+  const FIELD_LINES = [
+    [/scien|physic|chemi|biolog|astronom/i, 'Every question you ask is how she started.'],
+    [/computer|engineer|invent|mathemat/i, "If you've ever built or coded something, you're on the path she cleared."],
+    [/astronaut/i, "Look up tonight — she's been there."],
+    [/physician/i, 'Anyone who has ever cared for you stands on her work.'],
+    [/politic|lawyer|activist|peace/i, "Every time you speak up, you're doing what she did."],
+    [/journal|writer|literature/i, 'Every story you tell carries hers forward.'],
+    [/paint|photo|architect|singer/i, 'Anything you make joins the same story.'],
+    [/educat/i, 'Everything you learn passes through people like her.'],
+    [/business|econom/i, 'Every idea you pitch walks through a door she opened.'],
+    [/athlete/i, "Every time you push your limit, you're running her race."],
+    [/nobel|fields|turing|prize|medal/i, 'Proof that someone alive right now — maybe you — is next.']
+  ];
+  // "Why it connects to you": tie her to the person in the camera — the spot they tapped,
+  // the room they're in, how close she's from, or what they do.
+  function connectLine(tile, tapped) {
+    const out = [];
+    if (tapped) out.push("She's part of your picture — her photo matched your colors right there.");
+    const sc = Relevance.scenes.find(s => s.id === Relevance.getScene());
+    const d = tile.kind === 'person' ? Relevance.distanceKm(tile) : null;
+    if (sc && (tile.themes || []).some(t => t === sc.tag || sc.related.includes(t)))
+      out.push(`You're in a ${sc.label.toLowerCase()} right now — that's her world too.`);
+    else if (d != null && d < 1500) out.push(`She's from just ${d.toLocaleString()} km away from you.`);
+    else if (tile.kind === 'headline') out.push('Because of this, that door was already open for you.');
+    else { const f = FIELD_LINES.find(([re]) => re.test(tile.field || '')); if (f) out.push(f[1]); }
+    return out.join(' ');
+  }
+  function openCard(tile, refreshFrame, tapped) {
     if (refreshFrame) {
       const s = Mosaic.frameSummary();
       $('frameBanner').textContent = `This frame is made of ${s.uniqueTiles.toLocaleString()} women & stories`;
@@ -235,12 +269,14 @@
     }
     $('cardMeta').textContent = meta.filter(Boolean).join(' · ');
     $('cardDesc').textContent = tile.desc ? tile.desc.charAt(0).toUpperCase() + tile.desc.slice(1) : '';
-    // Longer memo (what she did + why it matters). Fields come from library/tiles.json; all optional.
-    const memoWrap = $('cardMemoWrap');
-    memoWrap.hidden = !(tile.memo || tile.impact);
-    $('cardMemo').textContent = tile.memo || '';
-    $('cardImpact').textContent = tile.impact ? 'Why it matters: ' + tile.impact : '';
-    $('cardImpact').hidden = !tile.impact;
+    // One-sentence memo + a short, personal "Why it connects to you" (memo/themes from library/tiles.json).
+    const memoWrap = $('cardMemoWrap'), memo = shortMemo(tile), conn = connectLine(tile, tapped);
+    memoWrap.hidden = !(memo || conn);
+    $('cardMemo').textContent = memo;
+    $('cardMemo').hidden = !memo;
+    $('cardImpact').innerHTML = '<strong>Why it connects to you</strong>';
+    $('cardImpact').append(document.createTextNode(conn));
+    $('cardImpact').hidden = !conn;
     $('cardCredit').textContent = tile.memoSource && /wikipedia\.org/.test(tile.memoSource) ? 'Summary from Wikipedia (CC BY-SA)' : '';
     memoWrap.scrollTop = 0; $('card').scrollTop = 0;
     const link = $('cardLink');
