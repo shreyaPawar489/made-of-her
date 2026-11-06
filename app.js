@@ -129,10 +129,14 @@
     const step = '<b>Your step:</b> “' + esc(a.text) + '”' + (a.past ? ' <span class="muted">(from your experience)</span>' : '');
     const center = a.womanId === t.id;                                   // the single best-matched woman for this step
     const real = center && a.reason && !String(a.reason).startsWith(t.name); // a bio like "Name (b. 1947): …" is not a reason
-    const body = real
-      ? '<b>Why ' + esc(her) + ':</b> ' + esc(a.reason)
-      : '<b>Why ' + esc(her) + ':</b> ' + (center ? esc(her) + ' is the closest match we found for this step. ' : esc(me) + ', ' + esc(her) + ' is part of your portrait for this step. ') +
-        (center ? 'She’s listed as ' : 'She’s listed as ') + (field ? art + ' ' + esc(field) : 'a woman') + ' among the women in ' + esc(trackLabel) + ' who went before you.';
+    const words = window.JourneyMatch ? JourneyMatch.explain(a.text, t) : [];
+    const list = words.length > 1 ? words.slice(0, -1).join(', ') + ' and ' + words[words.length - 1] : (words[0] || '');
+    const asField = (field ? art + ' ' + esc(field) : 'a woman') + ' among the women in ' + esc(trackLabel) + ' who went before you';
+    let why;
+    if (real) why = esc(a.reason);
+    else if (list) why = (center ? esc(her) + ' is the closest match we found for this step. ' : '') + 'Your step fits her story: her biography mentions <b>' + esc(list) + '</b>. She’s listed as ' + asField + '.';
+    else why = (center ? esc(her) + ' is the closest match we found for this step. ' : esc(me) + ', ' + esc(her) + ' is part of your portrait for this step. ') + 'She’s listed as ' + asField + '.';
+    const body = '<b>Why ' + esc(her) + ':</b> ' + why;
     return '<div class="why">' + step + '<br>' + body + '</div>';
   }
 
