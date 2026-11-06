@@ -50,3 +50,27 @@
 
 /* profile picture = your mosaic portrait */
 .ach-av.has-mosaic { background: center / cover no-repeat; color: transparent; border-radius: 10px; }
+/* ---------- Timeline (replaces the social-style feed) ---------- */
+.tl { padding: 20px 22px 8px; }
+.tl-h { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 20px; margin: 0 0 14px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tl-h span { font: 500 12px Inter, system-ui, sans-serif; color: var(--muted, #6E6470); }
+.tl-sub { font: 600 11px Inter, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--gold, #C9973A); margin: 8px 0 10px; }
+.tl-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.tl-item { display: grid; grid-template-columns: 52px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+.tl-item::before { content: ""; position: absolute; left: 70px; top: 6px; bottom: -2px; width: 1px; background: var(--line, #E8DED4); }
+.tl-item::after { content: ""; position: absolute; left: 66px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--plum, #6B2D5C); }
+.tl-past::after { background: var(--gold, #C9973A); }
+.tl-list .tl-item:last-child::before { display: none; }
+.tl-when { font: 600 12px Inter, system-ui, sans-serif; color: var(--muted, #6E6470); text-align: right; padding-top: 1px; }
+.tl-body { padding-left: 14px; min-width: 0; }
+.tl-text { margin: 0 0 8px; font: 500 15px/1.4 Inter, system-ui, sans-serif; color: var(--ink, #221A20); }
+.tl-her { display: flex; gap: 10px; align-items: flex-start; }
+.tl-her img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; }
+.tl-her b { font: 600 13px Inter, system-ui, sans-serif; }
+.tl-her p { margin: 2px 0 2px; font-size: 13px; line-height: 1.4; color: #4A4049; }
+.tl-her a { font: 600 12px Inter, system-ui, sans-serif; color: var(--plum, #6B2D5C); text-decoration: none; }
+@media (max-width: 640px) {
+  .tl { padding: 16px 14px 4px; }
+  .tl-item { grid-template-columns: 46px 1fr; gap: 10px; }
+  .tl-item::before { left: 51px; } .tl-item::after { left: 47px; }
+}
