@@ -50,7 +50,7 @@
       started = true;
       $('start').hidden = true; $('topbar').hidden = false;
       $('hint').hidden = false; setTimeout(() => $('hint').classList.add('fade'), 5000);
-      if (matchMedia('(pointer: coarse)').matches) $('flipFab').hidden = false;
+      if (matchMedia('(pointer: coarse)').matches) { $('flipFab').hidden = false; $('menuFab').hidden = false; }
       Mosaic.start();
     } catch (e) {
       $('camError').hidden = false;
@@ -59,7 +59,18 @@
     }
   };
   $('flipFab').onclick = () => $('flipBtn').click();
-  $('flipBtn').onclick = async () => { facing = facing === 'user' ? 'environment' : 'user'; try { await startCamera(); } catch (e) { facing = 'user'; } };
+  // Controls bar is hidden by default; S key (desktop) or ☰ button (touch) toggles it.
+  function toggleControls(show = $('controls').hidden) {
+    $('controls').hidden = !show;
+    document.body.classList.toggle('controls-open', show);
+    $('menuFab').textContent = show ? '×' : '☰';
+    $('menuFab').setAttribute('aria-label', show ? 'Hide controls' : 'Show controls');
+  }
+  $('menuFab').onclick = () => toggleControls();
+  $('flipBtn').onclick = async () => {
+    facing = facing === 'user' ? 'environment' : 'user';
+    try { await startCamera(); } catch (e) { facing = 'user'; try { await startCamera(); } catch (e2) { /* keep last frame */ } }
+  };
 
   // ---------- controls ----------
   const sync = () => Mosaic.setOptions({
@@ -84,7 +95,7 @@
     if (!started || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
     if (e.code === 'Space') { e.preventDefault(); $('freezeBtn').click(); }
     else if (e.key === 'd' || e.key === 'D') $('statsBtn').click();
-    else if (e.key === 's' || e.key === 'S') $('controls').hidden = !$('controls').hidden;
+    else if (e.key === 's' || e.key === 'S') toggleControls();
     else if (e.key === '0') Mosaic.resetView();
     else if (e.key === 'l' || e.key === 'L') { lensOn = !lensOn; if (!lensOn) Mosaic.setLens(null); }
     else if (e.key === 'Escape') { if ($('card').hidden) Mosaic.resetView(); closeCard(); }
@@ -163,8 +174,9 @@
     const link = $('cardLink');
     if (tile.link && tile.link !== '#') { link.href = tile.link; link.hidden = false; } else link.hidden = true;
     $('card').hidden = false;
+    document.body.classList.add('card-open');
   }
-  function closeCard() { $('card').hidden = true; }
+  function closeCard() { $('card').hidden = true; document.body.classList.remove('card-open'); }
   $('cardClose').onclick = closeCard;
   $('keepBtn').onclick = closeCard;
   $('liveBtn').onclick = () => { closeCard(); setFrozen(false); };
