@@ -222,7 +222,9 @@
       const cv = document.getElementById(id);
       if (!cv) return;
       if (!window[key] || window[key]._canvas !== cv || window[key]._photo !== s.profile.photo) {
-        if (window[key]) window[key].destroy();
+        // canvas#bigPortrait is also exposed by the browser as window.bigPortrait: never treat a DOM element as an instance
+        const cur = window[key];
+        if (cur && typeof cur.destroy === 'function') cur.destroy();
         window[key] = create(cv, { photo: s.profile.photo });
         window[key]._canvas = cv; window[key]._photo = s.profile.photo;
       }
