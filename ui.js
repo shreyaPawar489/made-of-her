@@ -140,7 +140,11 @@
     if (nearBtn.classList.contains('on')) { Relevance.setLocation(null); nearBtn.classList.remove('on'); return; }
     const label = nearBtn.textContent; nearBtn.textContent = '📍 Finding you…';
     try { await Relevance.locate(); nearBtn.classList.add('on'); nearBtn.textContent = label; }
-    catch (e) { nearBtn.textContent = label; flash(nearBtn, e && e.code === 1 ? '📍 Location blocked' : '📍 Could not locate you'); }
+    catch (e) {
+      nearBtn.textContent = label; console.warn('geolocation failed', e && e.code, e && e.message);
+      const why = !e ? '' : e.code === 1 ? 'Location blocked' : e.code === 2 ? 'Location unavailable (VPN? Wi-Fi?)' : e.code === 3 ? 'Location timed out, tap to retry' : e.code === 0 ? 'Location not supported here' : 'Could not locate you';
+      flash(nearBtn, '📍 ' + why, 6000);
+    }
   };
 
   let lensOn = true;

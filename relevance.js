@@ -71,12 +71,18 @@
     },
     // Ask the browser for the viewer's position (needs HTTPS or localhost + user permission).
     locate() {
-      return new Promise((res, rej) => {
-        if (!navigator.geolocation) return rej(new Error('unsupported'));
-        navigator.geolocation.getCurrentPosition(
-          p => { this.setLocation({ lat: p.coords.latitude, lon: p.coords.longitude }); res(loc); },
-          e => rej(e), { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
-      });
+      const ask = opts => new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, opts));
+      return (async () => {
+        if (!navigator.geolocation) throw Object.assign(new Error('unsupported'), { code: 0 });
+        let p;
+        try { p = await ask({ enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }); }
+        catch (e) {
+          if (e.code === 1) throw e; // permission denied: no point retrying
+          p = await ask({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }); // 2nd try: slower, uses GPS/Wi-Fi radios
+        }
+        this.setLocation({ lat: p.coords.latitude, lon: p.coords.longitude });
+        return loc;
+      })();
     },
     apply
   };
