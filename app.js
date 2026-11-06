@@ -15,6 +15,22 @@
   App.tracksReady = fetch('data/tracks.json').then(r => r.json()).then(d => (App.tracks = d.tracks || {})).catch(() => (App.tracks = {}));
   App.trackLabel = id => (App.tracks && App.tracks[id] && App.tracks[id].label) || id || '';
 
+  // Real women's faces from the library, used as texture instead of gradients (profile banner, onboarding wall).
+  App.facesReady = (window.JourneyLib ? JourneyLib.ready : Promise.reject()).then(() => {
+    const L = JourneyLib, people = L.tiles.filter(t => t.kind === 'person');
+    if (!people.length || !L.atlas) return;
+    let seed = 7; const pick = () => people[(seed = (seed * 9301 + 49297) % 233280) % people.length];
+    const sheet = (cols, rows, px) => {
+      const c = document.createElement('canvas'); c.width = cols * px; c.height = rows * px;
+      const g = c.getContext('2d');
+      for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) L.drawTile(g, pick(), k * px, r * px, px, px);
+      return c.toDataURL('image/jpeg', 0.8);
+    };
+    document.documentElement.style.setProperty('--faces-strip', 'url(' + sheet(16, 2, 32) + ')');
+    document.documentElement.style.setProperty('--faces-wall', 'url(' + sheet(8, 10, 64) + ')');
+    document.documentElement.classList.add('has-faces');
+  }).catch(() => {});
+
   App.toast = function (msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
     document.body.appendChild(t); setTimeout(() => t.remove(), 2600);

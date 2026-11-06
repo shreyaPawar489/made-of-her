@@ -1,0 +1,44 @@
+/* human.css (P3 branch): UI pass loaded last, after app/achievements/coach css. */
+/* =========================================================================
+   Human UI pass: fewer "AI app" tells. Flat paper + ink instead of gradients and glow,
+   real women's faces instead of decoration, squarer shapes, people before chatbot.
+   ========================================================================= */
+:root { --radius: 8px; --shadow: none; }
+body { background: var(--bg); }
+.card, .ob-card, .modal, .cs { border-radius: var(--radius); box-shadow: none; }
+.btn { border-radius: 6px; }
+.chip { border-radius: 6px; }
+.tabs a { border-radius: 6px; }
+.tabs a.on { background: none; color: var(--ink); box-shadow: inset 0 -2px 0 var(--plum); border-radius: 0; }
+#nav { background: var(--bg); backdrop-filter: none; }
+.card > h3, .cs-title { font-size: 18px; }
+/* profile banner: a strip of real women, not a gradient */
+#profileCard::before { height: 64px; background: var(--plum); }
+.has-faces #profileCard::before { background: var(--faces-strip) left top / auto 100% repeat-x; filter: saturate(.85); }
+#avatar { border-radius: 8px; }
+.progress .bar { height: 6px; border-radius: 3px; }
+.progress .bar i { background: var(--plum); border-radius: 3px; }
+/* onboarding: plain paper, a wall of faces on the left on wide screens */
+#onboarding { background: var(--bg); gap: 48px; }
+.ob-card { box-shadow: none; padding: 36px; }
+.ob-card h1 { letter-spacing: -.02em; }
+.ob-dots i { height: 3px; border-radius: 0; }
+.ob-wall { display: none; }
+@media (min-width: 1000px) {
+  .has-faces .ob-wall { display: flex; align-items: flex-end; width: 400px; align-self: stretch; max-height: 680px; border-radius: var(--radius); overflow: hidden;
+    background: linear-gradient(transparent 55%, rgba(34,26,32,.85)), var(--faces-wall) center / 400px auto; }
+  .ob-wall p { margin: 0; padding: 24px; color: #fff; font: 600 26px/1.2 var(--serif); }
+  .ob-wall span { font-weight: 400; font-size: 18px; opacity: .85; }
+}
+/* coach is a helper, not the hero: quieter dock, no sparkle */
+.cd-bar { border-radius: 8px; box-shadow: 0 2px 8px rgba(34,26,32,.18); background: var(--ink); }
+.cd-bar-icon { display: none; }
+.cd-panel { border-radius: 10px; }
+.cd-head { background: var(--ink); }
+.cd-text { border-radius: 8px; }
+.cd-msg.me .cd-text { background: var(--ink); }
+.cs-effort { border-radius: 4px; }
+/* people first: bigger faces in "Women on your path" */
+.person img, .person .ph { width: 52px; height: 52px; border-radius: 8px; }
+.badge { border-radius: 4px; }
+.ach-card { border: 1px solid var(--line); }
