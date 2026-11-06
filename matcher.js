@@ -55,7 +55,9 @@
     [/engineer|robot|mechanical|circuit|build|prototype/, 'engineer engineering inventor'],
     [/win|won|award|prize|scholarship|fellowship|honor/, 'award prize winner honoured laureate'],
     [/civil rights|discriminat|housing|immigra|equal|racis|segregat|human rights/, 'civil rights activist human rights lawyer justice equality discrimination'],
-    [/biolog|chem|genetic|climate|environment|ecolog|neuro/, 'biologist chemist scientist research environmental']
+    [/\bbio\b|biolog|genetic|\bcells?\b|\bdna\b|molecul|ecolog|neuro|anatom|physiolog|evolution|microb|immun/, 'biologist biology geneticist molecular cell immunologist microbiologist neuroscientist'],
+    [/\bchem\b|chemis/, 'chemist chemistry'],
+    [/climate|environment/, 'environmental climate ecologist conservation']
   ];
 
   let idx = null;
@@ -66,7 +68,7 @@
     const L = window.JourneyLib; if (!L || !L.tiles) return;
     const docs = [], df = new Map(); let total = 0;
     for (const t of L.tiles) {
-      if (t.kind !== 'person') continue;
+      if (t.kind !== 'person' || (L.isReal && !L.isReal(t))) continue;
       note([t.desc, t.memo].join(' '));
       const toks = tokens([t.desc, t.desc, t.field, t.field, t.memo].join(' '));
       const tf = new Map(); for (const w of toks.concat(phraseKeys(t.desc), phraseKeys(t.memo))) tf.set(w, (tf.get(w) || 0) + 1);
