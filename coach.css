@@ -7,14 +7,15 @@
 .cs-title { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; }
 .cs-done-count { font-size: 12px; color: var(--c-muted); }
 .cs-list { display: flex; flex-direction: column; }
-.cs-step { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--c-line); cursor: pointer; }
+.cs-hint { margin: -4px 0 6px; font-size: 12.5px; color: var(--c-muted); }
+.cs-step { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--c-line); cursor: pointer; }
 .cs-step:first-child { border-top: 0; }
 .cs-step input { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; margin: 1px 0 0; border: 2px solid var(--c-plum); border-radius: 6px; background: #fff; cursor: pointer; flex: none; }
 .cs-step input:hover, .cs-step input:focus-visible { background: #F3E6EF; outline: none; box-shadow: 0 0 0 3px rgba(107, 45, 92, .18); }
 .cs-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cs-text { font-size: 14px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
 .cs-why { font-size: 12.5px; line-height: 1.4; color: var(--c-muted); }
-.cs-effort { font-size: 11px; font-weight: 600; color: var(--c-plum); background: #F3E6EF; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+.cs-effort { font-size: 12px; font-weight: 600; color: var(--c-plum); }
 .cs-empty { margin: 4px 0 10px; font-size: 13.5px; line-height: 1.45; color: var(--c-muted); }
 .cs-btn { width: 100%; border: 0; border-radius: 10px; padding: 10px 14px; font: 600 14px Inter, system-ui, sans-serif; background: var(--c-plum); color: #fff; cursor: pointer; }
 .cs-btn:disabled { opacity: .6; cursor: default; }

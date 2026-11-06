@@ -73,9 +73,9 @@
     };
     const body = el('span', 'cs-body');
     body.appendChild(el('span', 'cs-text', s.text));
+    if (s.effort && s.status !== 'done') body.appendChild(el('span', 'cs-effort', s.effort));
     if (s.why) body.appendChild(el('span', 'cs-why', s.why));
     row.append(cb, body);
-    if (s.effort && s.status !== 'done') row.appendChild(el('span', 'cs-effort', s.effort));
     return row;
   }
   let stepsBusy = false;
@@ -96,7 +96,8 @@
       b.onclick = () => window.openCoach(done.length ? 'What should I do next?' : '');
       card.appendChild(b);
     } else {
-      const list = el('div', 'cs-list'); todo.slice(0, 5).forEach(s => list.appendChild(stepRow(s))); card.appendChild(list);
+      card.appendChild(el('p', 'cs-hint', 'Done one? Tick it to add it to your portrait.'));
+      const list = el('div', 'cs-list'); todo.slice(0, 3).forEach(s => list.appendChild(stepRow(s))); card.appendChild(list);
       const more = el('button', 'cs-link', 'Ask your coach →'); more.onclick = () => window.openCoach(''); card.appendChild(more);
     }
     mount.appendChild(card);
