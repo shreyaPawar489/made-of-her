@@ -40,8 +40,7 @@
       track: p.track || (p.interests && p.interests[0]) || 'law', interests: p.interests || [],
       goal: (p.goal || '').slice(0, 300) || null, stage: p.stage || null, years: +p.years || 0,
       role: (p.role || '').slice(0, 120) || null, open_to_mentor: !!p.openToMentor,
-      pct: pr.pct || 0, women: pr.women || 0, is_sample: false, updated_at: new Date().toISOString(),
-      women_ids: [...new Set((s.achievements || []).map(a => +a.womanId).filter(n => n >= 0))].slice(0, 40)   // for 'Who you're made of' (P1 graph)
+      pct: pr.pct || 0, women: pr.women || 0, is_sample: false, updated_at: new Date().toISOString()
     };
     if (avatar && avatar.length < 40000) row.avatar = avatar;
     const r = await JDB.upsert('members', row); if (r) meSaved = true; return r;
