@@ -1,4 +1,4 @@
-// onboarding.js (P3): first-visit flow = the demo. Hook (living wall of real women) → You → Your story + goal → Photo → search + reveal → 3-stop app tour.
+// onboarding.js (P3): first-visit flow. About you → Where you are → What you've done → Goal + interests → Photo → Community → reveal.
 // Finish: JStore.setProfile → readExperience (P2) → seedPastAchievements (P1) → reveal portrait → showApp() + openCoach().
 (function () {
   'use strict';
@@ -39,32 +39,35 @@
     return `<label class="field"><span>${what} ${info('years', 'Count every year you spent building skills: jobs, internships, research, volunteering, running a business, caregiving. A rough number is fine. It helps us find mentors a few steps ahead of you and peers right beside you.')}</span><input class="input" id="f_years" type="number" min="0" max="60" value="${esc(d.years)}" placeholder="0"></label>`;
   }
 
-  // Onboarding is the demo: a hook screen, three short screens (~60 s), the portrait reveal, then a 3-stop tour of the app.
   const STEPS = [
-    { // 0 You + where you are
-      html: () => `<h1>Hi. Who's joining?</h1>
-        <div class="row"><label class="field"><span>First name</span><input class="input" id="f_name" value="${esc(d.name)}" autocomplete="given-name" placeholder="e.g. Ana"></label>
-        <label class="field"><span>City <small class="muted">(optional)</small></span><input class="input" id="f_city" value="${esc(d.city)}" autocomplete="address-level2" placeholder="San Jose, CA"></label></div>
-        <div class="field"><span>Where are you right now? ${info('stages', '<dl>' + STAGES.map(([k, l]) => `<dt>${l}</dt><dd>${STAGE_INFO[k]}</dd>`).join('') + '</dl>')}</span><div class="chips" id="f_stage">${STAGES.map(([k, l]) => `<button type="button" class="chip${d.stage === k ? ' on' : ''}" data-v="${k}" title="${esc(STAGE_INFO[k])}">${l}</button>`).join('')}</div></div>
-        ${d.stage ? `<div class="row ob-reveal-row">${expField()}
-        <label class="field"><span>${isStudent() ? 'School' : 'Current role'}</span><input class="input" id="f_role" value="${esc(d.role)}" placeholder="${isStudent() ? (d.stage === 'college' ? 'Pre-law at UC Berkeley' : 'Lincoln High School') : 'Paralegal at …'}"></label></div>` : ''}
-        <p class="ob-why"><b>Why it matters:</b> middle schooler or CEO, your coach and your matches adapt to your stage.</p>`,
-      mount: () => single('f_stage', v => { STEPS[0].read(); d.stage = v; render(true); }),
+    { // 0 About you
+      html: () => `<h1>Find the women a few steps ahead of you.</h1>
+        <p class="lead">Made of Her connects you with mentors and peers on your path. Every step you take adds a real woman who did it first to your portrait.</p>
+        <label class="field"><span>Your first name</span><input class="input" id="f_name" value="${esc(d.name)}" autocomplete="given-name" placeholder="e.g. Ana"></label>
+        <div class="row"><label class="field"><span>Age</span><input class="input" id="f_age" type="number" min="12" max="99" value="${esc(d.age)}" placeholder="17"></label>
+        <label class="field"><span>City</span><input class="input" id="f_city" value="${esc(d.city)}" autocomplete="address-level2" placeholder="San Jose, CA"></label></div>`,
+      read: () => { d.name = $('f_name').value.trim(); d.age = $('f_age').value; d.city = $('f_city').value.trim(); },
+      ok: () => d.name.length > 0
+    },
+    { // 1 Where you are now
+      html: () => `<h1>Where are you right now?</h1><p class="lead">Middle schooler or CEO, there's a place for you here. Your coach and your matches adapt to your stage.</p>
+        <div class="field"><span>Stage ${info('stages', '<dl>' + STAGES.map(([k, l]) => `<dt>${l}</dt><dd>${STAGE_INFO[k]}</dd>`).join('') + '</dl>')}</span><div class="chips" id="f_stage">${STAGES.map(([k, l]) => `<button type="button" class="chip${d.stage === k ? ' on' : ''}" data-v="${k}" title="${esc(STAGE_INFO[k])}">${l}</button>`).join('')}</div></div>
+        ${d.stage ? `<div class="row">${expField()}
+        <label class="field"><span>${isStudent() ? 'School' : 'Current role'}</span><input class="input" id="f_role" value="${esc(d.role)}" placeholder="${isStudent() ? (d.stage === 'college' ? 'Pre-law at UC Berkeley' : 'Lincoln Middle School') : 'Paralegal at …'}"></label></div>` : ''}`,
+      mount: () => single('f_stage', v => { STEPS[1].read(); d.stage = v; render(); }),
       read: () => {
-        d.name = $('f_name').value.trim(); d.city = $('f_city').value.trim();
         const g = $('f_grade'), y = $('f_years'), r = $('f_role');
         if (g) { d.grade = g.value; d.years = '0'; }
         if (y) { d.years = y.value; d.grade = ''; }
         if (r) d.role = r.value.trim();
       },
-      ok: () => d.name.length > 0 && !!d.stage
+      ok: () => !!d.stage
     },
-    { // 1 Done + goal
-      html: () => `<h1>Your story so far, and where it's going.</h1>
-        <label class="field"><span>What have you already done?</span>
-        <textarea class="input" id="f_exp" placeholder="${isStudent() ? 'Captain of debate team, volunteered at a legal aid clinic, AP Gov 5…' : 'Practiced civil rights law for 28 years, argued before the state supreme court, mentored 12 junior associates…'}">${esc(d.experienceText)}</textarea></label>
+    { // 2 What you've done
+      html: () => `<h1>What have you already done?</h1>
+        <p class="lead">Classes, clubs, jobs, projects, awards, caring for family. It all counts. Your past achievements fill your portrait from day one (up to 40%).</p>
         <div class="li-box${d.linkedin ? ' on' : ''}" id="liBox">
-          <button type="button" class="li-btn" id="liToggle"><span class="li-logo">in</span>${liPdfName ? 'LinkedIn PDF added' : d.linkedin ? 'LinkedIn connected' : 'Import from LinkedIn'}<small>${liPdfName ? 'Claude will read it when you finish' : d.linkedin ? esc(d.linkedin.replace(/^https?:\/\/(www\.)?/, '')) : 'Optional'}</small></button>
+          <button type="button" class="li-btn" id="liToggle"><span class="li-logo">in</span>${liPdfName ? 'LinkedIn PDF added' : d.linkedin ? 'LinkedIn connected' : 'Connect LinkedIn'}<small>${liPdfName ? 'Claude will read it when you finish' : d.linkedin ? esc(d.linkedin.replace(/^https?:\/\/(www\.)?/, '')) : 'Optional · import your experience'}</small></button>
           <div class="li-panel" id="liPanel" hidden>
             <div class="field"><span>Upload your LinkedIn PDF (best)</span>
               <p class="hint" style="margin:2px 0 8px">On your LinkedIn profile, tap <b>More → Save to PDF</b>. Upload it here and Claude reads your roles, education and awards into your portrait.</p>
@@ -73,45 +76,51 @@
             <label class="field"><span>Your LinkedIn profile URL</span><input class="input" id="f_li" value="${esc(d.linkedin)}" placeholder="linkedin.com/in/your-name" inputmode="url" autocomplete="url"></label>
             <label class="field"><span>Or paste your Experience section</span>
               <textarea class="input" id="f_liPaste" style="min-height:90px" placeholder="On LinkedIn: open your profile → Experience → select it all and copy. Paste it here."></textarea></label>
-            <p class="hint" style="margin:-6px 0 10px">LinkedIn doesn't share work history with other apps, so you bring it: your PDF or a paste. We only read what you give us.</p>
+            <p class="hint" style="margin:-6px 0 10px">LinkedIn doesn't share work history with other apps, so you bring it: your PDF or a paste. We only read what you give us, and members see your profile link once you connect.</p>
             <button type="button" class="btn small" id="liImport">Add to my experience</button> <span class="hint" id="liMsg"></span>
           </div>
         </div>
-        <label class="field"><span>Where do you want to go?</span><input class="input" id="f_goal" value="${esc(d.goal)}" maxlength="300" placeholder="e.g. Become a civil rights lawyer, or launch my own startup"></label>
-        <details class="ob-more"${d.interests.length ? ' open' : ''}><summary>Pick your fields yourself (optional)</summary>
-          <div class="chips" id="f_int">${trackList().map(([k, l]) => `<button type="button" class="chip small${d.interests.includes(k) ? ' on' : ''}" data-v="${k}">${esc(l)}</button>`).join('')}</div></details>
-        <p class="ob-why"><b>Your experience counts from day one.</b> Claude reads only what you write, never invents anything, and each real thing you've done adds a woman who did it first (up to 40% of your portrait).</p>`,
-      mount: () => {
-        mountLinkedIn();
-        $('f_int').addEventListener('click', e => {
-          const b = e.target.closest('.chip'); if (!b) return;
-          const v = b.dataset.v, i = d.interests.indexOf(v);
-          if (i >= 0) d.interests.splice(i, 1); else if (d.interests.length < 3) d.interests.push(v);
-          b.parentNode.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', d.interests.includes(c.dataset.v)));
-          validate();
-        });
-      },
-      read: () => { d.experienceText = $('f_exp').value.trim(); d.goal = $('f_goal').value.trim(); const li = $('f_li'); if (li) d.linkedin = cleanLinkedIn(li.value); },
+        <textarea class="input" id="f_exp" placeholder="${isStudent() ? 'Captain of debate team, volunteered at a legal aid clinic, AP Gov 5…' : 'Practiced civil rights law for 28 years, argued before the state supreme court, mentored 12 junior associates…'}">${esc(d.experienceText)}</textarea>
+        <p class="hint">Only what you write here is used. We never invent achievements.</p>`,
+      mount: mountLinkedIn,
+      read: () => { d.experienceText = $('f_exp').value.trim(); const li = $('f_li'); if (li) d.linkedin = cleanLinkedIn(li.value); },
+      ok: () => true
+    },
+    { // 3 Goal + interests
+      html: () => `<h1>Where do you want to go?</h1>
+        <label class="field"><span>Your goal, in your own words</span><input class="input" id="f_goal" value="${esc(d.goal)}" maxlength="300" placeholder="e.g. Become a civil rights lawyer, or launch my own startup"></label>
+        <p class="hint">Write it your way. Your coach reads exactly what you type.</p>
+        <div class="field"><span>Closest fields (optional: pick up to 3, or skip and we'll work it out from your sentence)</span><div class="chips" id="f_int">${trackList().map(([k, l]) => `<button type="button" class="chip${d.interests.includes(k) ? ' on' : ''}" data-v="${k}">${esc(l)}</button>`).join('')}</div></div>`,
+      mount: () => $('f_int').addEventListener('click', e => {
+        const b = e.target.closest('.chip'); if (!b) return;
+        const v = b.dataset.v, i = d.interests.indexOf(v);
+        if (i >= 0) d.interests.splice(i, 1); else if (d.interests.length < 3) d.interests.push(v);
+        b.parentNode.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', d.interests.includes(c.dataset.v)));
+        validate();
+      }),
+      read: () => { d.goal = $('f_goal').value.trim(); },
       ok: () => d.goal.length >= 3 || d.interests.length > 0
     },
-    { // 2 Photo + community
-      html: () => `<h1>Last thing: your portrait.</h1>
-        <p class="lead">One photo. It becomes a mosaic of real women that fills in as you grow. The photo stays on this device; only the mosaic is shared.</p>
+    { // 4 Photo
+      html: () => `<h1>Take your portrait</h1>
+        <p class="lead">One photo. It becomes a mosaic that starts gray and fills with real women as you grow. It stays on this device; only the mosaic is shared.</p>
         <div class="cam" id="cam">${d.photo ? `<img alt="" src="${d.photo}">` : '<div class="ph">Your photo will appear here</div>'}</div>
         <div class="cam-actions">
           <button type="button" class="btn" id="camBtn">${d.photo ? 'Retake' : 'Use camera'}</button>
           <button type="button" class="btn ghost" id="upBtn">Upload a photo</button>
           <input type="file" id="upFile" accept="image/*" hidden>
-        </div>
-        <div class="ob-toggles">
-          <label class="toggle"><input type="checkbox" id="f_share" ${d.shareInNetwork ? 'checked' : ''}><span><b>Meet women on my path</b><small>Mentors ahead of you and peers beside you see your first name, path and mosaic (never your photo).</small></span></label>
-          <label class="toggle"><input type="checkbox" id="f_mentor" ${d.openToMentor ? 'checked' : ''}><span><b>★ I'm open to mentoring</b><small>Women earlier on your path can ask you for a conversation.</small></span></label>
         </div>`,
       mount: mountCamera,
-      read: () => { const s = $('f_share'), m = $('f_mentor'); if (s) d.shareInNetwork = s.checked; if (m) d.openToMentor = m.checked; },
-      leave: stopCamera,
-      ok: () => !!d.photo,
-      next: 'Build my portrait →'
+      read: stopCamera,
+      ok: () => !!d.photo
+    },
+    { // 5 Community
+      html: () => `<h1>Meet the women on your path</h1><p class="lead">Mentors further along, and peers at your stage you can grow with.</p>
+        <label class="toggle"><input type="checkbox" id="f_share" ${d.shareInNetwork ? 'checked' : ''}><span><b>Show me in the network</b><small>Others see your first name, city, path, stage and your mosaic (never your photo).</small></span></label>
+        <label class="toggle"><input type="checkbox" id="f_mentor" ${d.openToMentor ? 'checked' : ''}><span><b>★ I'm open to mentoring</b><small>Women earlier on your path can ask you for a conversation.</small></span></label>`,
+      read: () => { d.shareInNetwork = $('f_share').checked; d.openToMentor = $('f_mentor').checked; },
+      ok: () => true,
+      next: 'Build my portrait'
     }
   ];
 
@@ -210,95 +219,27 @@
   }
 
   // ---------- render ----------
-  function card(inner, dots, cls, still) {
-    $('onboarding').className = cls || '';
+  function card(inner, dots) {
     $('onboarding').innerHTML = `<aside class="ob-wall" aria-hidden="true"><p>2,056 women who went first.<br><span>And the ones you'll meet here.</span></p></aside><div class="ob"><div class="ob-brand">Made of <em>Her</em></div>
-      ${dots ? `<div class="ob-dots" aria-label="Step ${step + 1} of ${STEPS.length}">${STEPS.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}<span>${step + 1} of ${STEPS.length}</span></div>` : ''}
-      <div class="ob-card${still ? '' : ' ob-step'}">${inner}</div></div>`;
+      ${dots ? `<div class="ob-dots">${STEPS.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>` : ''}
+      <div class="ob-card ob-step">${inner}</div></div>`;
   }
-  // quiet = re-render the same screen (stage chip picked): no slide-in animation, keep focus where it was
-  function render(quiet) {
+  function render() {
     const S = STEPS[step];
-    card(S.html() + `<div class="ob-nav"><button type="button" class="btn link" id="obBack">← Back</button>
-      <button type="button" class="btn" id="obNext">${S.next || 'Continue'}</button></div>`, true, '', quiet);
+    card(S.html() + `<div class="ob-nav">${step ? '<button type="button" class="btn link" id="obBack">← Back</button>' : '<span></span>'}
+      <button type="button" class="btn" id="obNext">${S.next || 'Continue'}</button></div>`, true);
     S.mount && S.mount();
-    $('obBack').onclick = () => { S.read && S.read(); S.leave && S.leave(); if (step === 0) intro(); else { step--; render(); } };
-    $('obNext').onclick = () => { S.read && S.read(); if (!S.ok()) return; S.leave && S.leave(); if (step < STEPS.length - 1) { step++; render(); } else finish(); };
+    $('obBack') && ($('obBack').onclick = () => { S.read && S.read(); step--; render(); });
+    $('obNext').onclick = () => { S.read && S.read(); if (!S.ok()) return; if (step < STEPS.length - 1) { step++; render(); } else finish(); };
     $('onboarding').querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', validate));
     $('onboarding').querySelectorAll('input:not([type=checkbox])').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') $('obNext').click(); }));
-    const first = quiet ? ($('f_grade') || $('f_years')) : $('onboarding').querySelector('input:not([type=checkbox]), textarea');
-    if (first && step < 2) first.focus({ preventScroll: true });
+    const first = $('onboarding').querySelector('input:not([type=checkbox]), textarea'); if (first && step < 4) first.focus();
     validate();
   }
   function validate() {
     const S = STEPS[step], b = $('obNext'); if (!b) return;
-    try { S.read && S.read(); } catch (e) { /* fields not mounted */ }
+    try { S.read && step !== 4 && S.read(); } catch (e) { /* fields not mounted */ }
     b.disabled = !S.ok();
-  }
-
-  // ---------- hook screen: a living wall of real women. Hover/tap any face to see who she is. ----------
-  function intro() {
-    stopCamera();
-    card(`<div class="hook">
-        <div class="hook-wall"><canvas id="hookCv" aria-label="A mosaic of real women from the library"></canvas><div class="hook-name" id="hookName"></div></div>
-        <h1>Every pixel is a real woman who went first.</h1>
-        <p class="lead">Made of Her turns your photo into a mosaic of 2,056 real women from Wikipedia: scientists, lawyers, astronauts, founders. No AI-generated faces. Each step you take adds one more.</p>
-        <ul class="hook-points">
-          <li><b>Your experience counts</b><span>Day one, not someday.</span></li>
-          <li><b>A Claude coach</b><span>Concrete next steps.</span></li>
-          <li><b>Women on your path</b><span>Mentors a few steps ahead.</span></li>
-        </ul>
-        <button type="button" class="btn coral big" id="hookGo">Build my portrait · 60 sec</button>
-        <a class="hook-alt" href="?demo=mentor">Just looking? Open a 28-year attorney's profile →</a>
-      </div>`, false, 'is-hook');
-    $('hookGo').onclick = () => { step = 0; render(); };
-    mountHook();
-  }
-  function mountHook() {
-    const cv = $('hookCv'), L = window.JourneyLib; if (!cv || !L) return;
-    const COLS = 12, ROWS = 5, g = cv.getContext('2d');
-    let people = [], grid = [], fade = [], hover = -1, spot = -1, lastSwap = 0, lastSpot = 0;
-    const touch = window.matchMedia('(hover: none)').matches;
-    const label = (i, auto) => {
-      const t = grid[i], el = $('hookName'); if (!el || !t) return;
-      el.innerHTML = `<b>${esc(t.name)}</b>${t.field ? ' · ' + esc(t.field) : ''}${t.year ? ' · ' + esc(t.year) : ''}${auto ? `<small>${touch ? 'Tap' : 'Hover'} any face</small>` : ''}`;
-    };
-    L.ready.then(() => {
-      people = L.tiles.filter(t => L.isReal(t));
-      if (!people.length) return;
-      grid = Array.from({ length: COLS * ROWS }, () => people[Math.random() * people.length | 0]);
-      fade = new Float32Array(COLS * ROWS).fill(1);
-      requestAnimationFrame(loop);
-    }).catch(() => {});
-    function cellAt(e) {
-      const r = cv.getBoundingClientRect();
-      const c = Math.floor((e.clientX - r.left) / r.width * COLS), w = Math.floor((e.clientY - r.top) / r.height * ROWS);
-      return c >= 0 && w >= 0 && c < COLS && w < ROWS ? w * COLS + c : -1;
-    }
-    cv.addEventListener('pointermove', e => { hover = cellAt(e); if (hover >= 0) label(hover); });
-    cv.addEventListener('pointerdown', e => { hover = cellAt(e); if (hover >= 0) label(hover); });
-    cv.addEventListener('pointerleave', () => { hover = -1; });
-    function loop(t) {
-      if (!document.body.contains(cv)) return;
-      requestAnimationFrame(loop);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), W = Math.round(cv.clientWidth * dpr), H = Math.round(W * ROWS / COLS);
-      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-      if (t - lastSwap > 140) { // a new woman fades in somewhere, like the mosaic filling in
-        lastSwap = t; const i = Math.random() * grid.length | 0;
-        if (i !== hover && i !== spot) { grid[i] = people[Math.random() * people.length | 0]; fade[i] = 0; }
-      }
-      if (hover < 0 && t - lastSpot > 1800) { lastSpot = t; spot = Math.random() * grid.length | 0; label(spot, true); }
-      const cw = W / COLS, ch = H / ROWS;
-      g.fillStyle = '#2b2229'; g.fillRect(0, 0, W, H);
-      for (let i = 0; i < grid.length; i++) {
-        fade[i] = Math.min(1, fade[i] + 0.06);
-        g.globalAlpha = fade[i];
-        L.drawTile(g, grid[i], (i % COLS) * cw, ((i / COLS) | 0) * ch, cw + 0.5, ch + 0.5);
-      }
-      g.globalAlpha = 1;
-      const on = hover >= 0 ? hover : spot;
-      if (on >= 0) { g.strokeStyle = '#fff'; g.lineWidth = 2.5 * dpr; g.strokeRect((on % COLS) * cw + dpr, ((on / COLS) | 0) * ch + dpr, cw - 2 * dpr, ch - 2 * dpr); }
-    }
   }
 
   // ---------- track from free text ----------
@@ -331,64 +272,33 @@
     return best || (valid.has('business') ? 'business' : [...valid][0]);
   }
 
-  // ---------- finish: search the library (visibly), then reveal the portrait ----------
-  function searching(track) {
-    card(`<div class="reveal"><h1>Reading your story…</h1><p class="lead">Searching 2,056 real women for the ones who did what you did.</p>
-      <div class="scan"><canvas id="scanCv" width="112" height="112"></canvas><div class="scan-name" id="scanName">&nbsp;</div><div class="scan-count" id="scanCount"></div></div></div>`, false);
-    const L = window.JourneyLib; let stop = false, n = 0;
-    if (L) L.ready.then(() => {
-      const pool = (L.candidates ? L.candidates(track) : L.tiles).slice();
-      const g = $('scanCv') && $('scanCv').getContext('2d');
-      (function next() {
-        if (stop || !$('scanCv') || !pool.length) return;
-        const t = pool[Math.random() * pool.length | 0]; n += 37;
-        L.drawTile(g, t, 0, 0, 112, 112);
-        $('scanName').innerHTML = `<b>${esc(t.name)}</b>${t.field ? ' · ' + esc(t.field) : ''}`;
-        $('scanCount').textContent = Math.min(2056, n).toLocaleString() + ' women checked';
-        setTimeout(next, 150);
-      })();
-    }).catch(() => {});
-    return () => { stop = true; };
-  }
-
-  function localExperience(text, track) {
-    return String(text).split(/\n|;|,|\.\s|\band\b/i).map(x => x.trim().replace(/\.$/, ''))
-      .filter(x => x.length > 5).slice(0, 8).map(x => ({ text: x.charAt(0).toUpperCase() + x.slice(1), track, year: null }));
-  }
-
+  // ---------- finish ----------
   async function finish() {
     const track = d.interests[0] || inferTrack();
     const profile = {
-      name: d.name, age: null, city: d.city, coords: null,
+      name: d.name, age: d.age ? +d.age : null, city: d.city, coords: null,
       stage: d.stage, years: +d.years || 0, grade: d.grade || '', role: d.role,
       experienceText: d.experienceText, linkedin: d.linkedin || '', goal: d.goal, interests: d.interests.length ? d.interests.slice() : [track], track,
       openToMentor: d.openToMentor, shareInNetwork: d.shareInNetwork, photo: d.photo
     };
-    const stopScan = searching(track);
+    card('<div class="reveal"><h1>Reading your experience…</h1><p class="lead">Finding the women who did what you did.</p><div class="spinner"></div></div>');
     JStore.setProfile(profile);
 
     let list = [];
-    const minWait = new Promise(r => setTimeout(r, 1800)); // long enough to see the search, short enough not to bore
     if ((profile.experienceText || liPdf) && window.readExperience) list = await withTimeout(readExperience(JStore.get().profile, { pdf: liPdf }), liPdf ? 30000 : 12000, []);
     // her current title from the LinkedIn PDF fills an empty role on her profile
     if (list && list.role && !profile.role) { profile.role = list.role; JStore.setProfile(Object.assign({}, JStore.get().profile, { role: list.role })); }
-    // API down or slow: use her own words, split into items (nothing invented), so the reveal never falls flat on stage.
-    if ((!list || !list.length) && profile.experienceText) list = localExperience(profile.experienceText, track);
     // nobody starts gray: top up to 3 with starter achievements built from her own answers (stage, role, years, goal)
     if (window.starterAchievements && (!list || list.length < 3)) list = (list || []).concat(starterAchievements(profile, list).slice(0, 3 - (list ? list.length : 0)));
     if (list && list.length && window.seedPastAchievements) await withTimeout(seedPastAchievements(list), 12000, null);
-    await minWait; stopScan();
 
     const n = JStore.get().achievements.length;
-    card(`<div class="reveal"><h1>Meet your portrait, ${esc(profile.name)}.</h1>
-      <div class="reveal-cv"><canvas id="revealCv" width="360" height="360"></canvas><div class="reveal-pill" id="revealPill" hidden></div></div>
-      <div class="pct" id="revealPct">0%</div><div class="muted">made of her${n ? ' · tap any tile to see who she is' : ''}</div>
+    card(`<div class="reveal"><h1>Meet your portrait, ${esc(profile.name)}.</h1><canvas id="revealCv" width="360" height="360"></canvas>
+      <div class="pct" id="revealPct">0%</div><div class="muted">made of her</div>
       <ul class="women" id="revealWomen"></ul>
-      <p class="lead" style="margin-top:16px">${n ? 'Your experience already counts. Every new step you log adds another woman who went first.' : 'It starts gray. Log your first real step and a woman who did it first fills in.'}</p>
-      <button type="button" class="btn coral big" id="enterBtn">Show me around →</button>
-      <button type="button" class="btn link" id="skipTourBtn">Skip the tour</button></div>`, false);
-    $('enterBtn').onclick = () => enter(true);
-    $('skipTourBtn').onclick = () => enter(false);
+      <p class="lead" style="margin-top:16px">${n ? 'Your experience already counts.' : 'It starts gray. Every real step you log adds a woman who went first.'}</p>
+      <button type="button" class="btn coral" id="enterBtn">Enter Made of Her →</button></div>`);
+    $('enterBtn').onclick = enter;
 
     if (!window.Portrait) return;
     const p = Portrait.create($('revealCv'), { photo: profile.photo });
@@ -402,64 +312,14 @@
       el.textContent = Math.round(target * k) + '%';
       if (k < 1) requestAnimationFrame(tick);
     })();
-    // Tap a tile → which woman, and which of your achievements put her there.
-    $('revealCv').addEventListener('click', e => {
-      const r = e.currentTarget.getBoundingClientRect(), hit = p.cellAt(e.clientX - r.left, e.clientY - r.top), pill = $('revealPill');
-      pill.hidden = false;
-      pill.style.left = Math.max(70, Math.min(r.width - 70, e.clientX - r.left)) + 'px';
-      pill.style.top = (e.clientY - r.top) + 'px';
-      pill.innerHTML = hit && hit.tile ? `<b>${esc(hit.tile.name)}</b>${hit.achievement ? `<small>for “${esc(hit.achievement.text)}”</small>` : ''}` : '<small>Still gray. Your next step fills it.</small>';
-    });
-    const L = window.JourneyLib, ach = JStore.get().achievements.filter(a => a.womanId != null).slice(0, 3);
-    if (L && ach.length) $('revealWomen').innerHTML = ach.map(a => {
-      const t = L.tile(a.womanId); if (!t) return '';
-      return `<li><img alt="" src="${L.thumb(t, 64)}"><div><b>${esc(t.name)}</b> <span class="muted">for “${esc(a.text)}”</span>${a.reason && !String(a.reason).startsWith(t.name) ? `<small>${esc(a.reason)}</small>` : ''}</div></li>`;
-    }).join('');
+    const L = window.JourneyLib, ach = JStore.get().achievements.filter(a => a.womanId != null).slice(0, 4);
+    if (L && ach.length) $('revealWomen').innerHTML = ach.map(a => { const t = L.tile(a.womanId); return t ? `<li><b>${esc(t.name)}</b> <span class="muted">for “${esc(a.text)}”</span></li>` : ''; }).join('');
   }
 
-  function enter(withTour) {
+  function enter() {
     window.showApp && showApp();
     window.Network && Network.upsertMe && Network.upsertMe();
-    if (withTour) setTimeout(() => tour(0), 700);
-    else setTimeout(() => { window.openCoach && openCoach(); }, 400);
-  }
-
-  // ---------- 3-stop tour of the real app (spotlight + tip). Skippable; ends by opening the coach. ----------
-  const TOUR = [
-    { sel: '#profileCard', title: 'This is you, made of her', text: 'Your portrait lives here. Tap it to see every woman inside it and why she\'s there. Real people, real sources, nothing generated.' },
-    { sel: '#steps', title: 'Your Claude coach', text: 'It turns your goal into concrete steps for this week. Do one, check it off, and a new woman joins your portrait.' },
-    { sel: '#onYourPath', title: 'Women on your path', text: 'Mentors a few steps ahead and peers right beside you. Send one a message: that\'s how the next step gets easier.' }
-  ];
-  let tourCleanup = null;
-  function tour(i) {
-    if (tourCleanup) tourCleanup();
-    const T = TOUR[i];
-    if (!T) { window.openCoach && openCoach(); return; }
-    const el = document.querySelector(T.sel);
-    if (!el || !el.offsetParent) return tour(i + 1);
-    const box = document.createElement('div'); box.className = 'tour';
-    box.innerHTML = `<div class="tour-block"></div><div class="tour-hole"></div>
-      <div class="tour-tip" role="dialog" aria-label="${esc(T.title)}"><div class="tour-n">${i + 1} of ${TOUR.length}</div><h3>${esc(T.title)}</h3><p>${esc(T.text)}</p>
-      <div class="tour-nav"><button type="button" class="btn link" data-skip>Skip</button><button type="button" class="btn" data-next>${i === TOUR.length - 1 ? 'Start exploring' : 'Next →'}</button></div></div>`;
-    document.body.appendChild(box);
-    const hole = box.querySelector('.tour-hole'), tip = box.querySelector('.tour-tip');
-    function place() {
-      const r = el.getBoundingClientRect(), pad = 8, vw = window.innerWidth, vh = window.innerHeight;
-      Object.assign(hole.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: Math.min(r.height, vh - 40) + pad * 2 + 'px' });
-      const tw = Math.min(340, vw - 32), th = tip.offsetHeight;
-      let left = r.right + 16 + tw <= vw - 16 ? r.right + 16 : r.left - 16 - tw >= 16 ? r.left - 16 - tw : Math.max(16, Math.min(vw - tw - 16, r.left));
-      let top = left === r.right + 16 || left === r.left - 16 - tw ? Math.max(16, Math.min(vh - th - 16, r.top)) : (r.bottom + 16 + th <= vh ? r.bottom + 16 : Math.max(16, r.top - 16 - th));
-      Object.assign(tip.style, { width: tw + 'px', left: left + 'px', top: top + 'px' });
-    }
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    place(); setTimeout(place, 400);
-    window.addEventListener('scroll', place, true); window.addEventListener('resize', place);
-    box.querySelector('[data-next]').onclick = () => tour(i + 1);
-    box.querySelector('[data-skip]').onclick = () => tour(TOUR.length);
-    const key = e => { if (e.key === 'Escape') tour(TOUR.length); else if (e.key === 'Enter' || e.key === 'ArrowRight') tour(i + 1); };
-    document.addEventListener('keydown', key);
-    box.querySelector('[data-next]').focus({ preventScroll: true });
-    tourCleanup = () => { window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place); document.removeEventListener('keydown', key); box.remove(); tourCleanup = null; };
+    setTimeout(() => { window.openCoach && openCoach(); }, 400);
   }
 
   document.addEventListener('click', e => {
@@ -473,8 +333,7 @@
     start() {
       step = 0;
       $('nav').hidden = true; $('app').hidden = true; $('onboarding').hidden = false; document.body.classList.add('onboarding');
-      (window.App && App.tracksReady ? App.tracksReady : Promise.resolve()).then(intro);
-    },
-    tour: () => tour(0)
+      (window.App && App.tracksReady ? App.tracksReady : Promise.resolve()).then(render);
+    }
   };
 })();
