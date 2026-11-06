@@ -8,6 +8,7 @@
   const GROUP = { middle_school: 'student', high_school: 'student', college: 'student', early: 'early', switching: 'early', returning: 'early', mid: 'experienced', senior: 'experienced' };
   const db = () => window.JDB && JDB.ready && JDB.ready();
 
+  const COLS = 'select=id,name,city,track,interests,goal,stage,years,role,open_to_mentor,pct,women,avatar,is_sample';
   let members = [], conns = [], msgs = [], msgsOn = null, pollT = null, upT = null, started = false, threadT = null;
   const SEEN_KEY = 'moh.seen.v1';
   const seen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (e) { return {}; } };
@@ -45,10 +46,10 @@
     if (!db()) return;
     const id = myId();
     const [m, c] = await Promise.all([
-      JDB.select('members', 'select=id,name,city,track,interests,goal,stage,years,role,open_to_mentor,pct,women,avatar,is_sample&order=years.desc&limit=200'),
+      JDB.select('members', COLS + '&order=years.desc&limit=200'),
       JDB.select('connections', 'select=*&or=(from_id.eq.' + id + ',to_id.eq.' + id + ')&order=created_at.desc')
     ]);
-    if (m) members = m.filter(x => x.id !== id);
+    if (m) { const extra = members.filter(x => !m.some(y => y.id === x.id)); members = m.concat(extra).filter(x => x.id !== id); } // keep people found by search
     if (c) conns = c;
     await loadMessages();
     renderCard(); renderBadge();
@@ -102,7 +103,7 @@
     return '<span class="pill">Pending</span>';
   }
   function person(m, extra) {
-    return `<div class="person">${avatar(m)}<div class="who"><b>${esc(cleanName(m.name))}${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
+    return `<div class="person"><a href="#" class="who-pic" data-profile="${m.id}" aria-label="View ${esc(cleanName(m.name))}">${avatar(m)}</a><div class="who"><b><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a>${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</b>
       <small>${esc(sub(m))}</small>${m.pct ? `<small>${m.pct}% made of her</small>` : ''}${extra || ''}</div>${action(m)}</div>`;
   }
 
@@ -129,8 +130,13 @@
     const reqs = conns.filter(c => c.to_id === myId() && c.status === 'pending');
     const mine = conns.filter(c => c.status === 'accepted').map(c => memberById(c.from_id === myId() ? c.to_id : c.from_id)).filter(Boolean);
     const sent = conns.filter(c => c.from_id === myId() && c.status === 'pending').map(c => memberById(c.to_id)).filter(Boolean);
+    if (!$('netSearch')) {
+      el.innerHTML = `<div class="card net-search"><input id="netSearch" class="input" type="search" placeholder="Search women by name, role, city or path…" autocomplete="off" aria-label="Search the network"><div id="netResults"></div></div><div id="netBody"></div>`;
+      const inp = $('netSearch'); inp.value = q;
+      inp.addEventListener('input', () => { q = inp.value; clearTimeout(searchT); searchT = setTimeout(() => runSearch(q), 250); });
+    }
     const section = (title, arr, empty, cls) => `<div class="card ${cls || ''}"><h3>${title}</h3>${arr.length ? arr.join('') : `<p class="empty">${empty}</p>`}</div>`;
-    el.innerHTML = '<div class="net-grid">' +
+    $('netBody').innerHTML = '<div class="net-grid">' +
       section('Requests' + (reqs.length ? ` <span class="badge">${reqs.length}</span>` : ''),
         reqs.map(c => { const m = memberById(c.from_id); return m ? person(m, c.note ? `<div class="note">“${esc(c.note)}”</div>` : '') : ''; }),
         'No requests right now.', 'full') +
@@ -144,6 +150,7 @@
         <li><b>Grow together.</b> Log what you did after the chat. It adds a woman to both of your portraits.</li></ol>
         <p class="muted" style="margin:8px 0 0"><b>Coming next:</b> Circles of six women at the same stage who meet once a month, mentor office hours, and verified mentors.</p></div>` +
       '</div>';
+    renderResults();
   }
 
   // ---------- connect / accept ----------
@@ -167,13 +174,66 @@
       renderCard(); if (!$('network').hidden) renderPage();
     };
   }
+  // ---------- profile: full once connected, a short card before ----------
+  function openProfile(id) {
+    const m = memberById(id); if (!m) return;
+    const c = connWith(id), name = cleanName(m.name), first = name.split(' ')[0];
+    const head = `<div class="prof-head">${avatar(m)}<div><h3>${esc(name)}${m.open_to_mentor ? ' <span class="star">★</span>' : ''}</h3>
+      <div class="muted">${esc(sub(m))}</div>${m.open_to_mentor ? '<span class="mentor-tag">★ Open to mentoring</span>' : ''}</div></div>`;
+    if (!c || c.status !== 'accepted') {
+      App.modal(`<div class="prof">${head}
+        <div class="prof-locked">🔒 ${esc(first)}'s goal, interests and portrait open once you're connected.</div>
+        <div class="actions"><button class="btn link" data-close>Close</button>${action(m)}</div></div>`);
+      return;
+    }
+    const label = t => (window.App && App.trackLabel(t)) || t;
+    const tracks = [m.track].concat(m.interests || []).filter((t, i, a) => t && a.indexOf(t) === i);
+    const since = c.created_at ? new Date(c.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const box = App.modal(`<div class="prof full">${head}
+      <div class="progress"><div class="bar"><i style="width:${+m.pct || 0}%"></i></div>
+        <div class="lbl"><b>${+m.pct || 0}%</b> made of her · ${+m.women || 0} women</div></div>
+      ${m.goal ? `<div class="prof-sec"><span class="muted">Where she's going</span><p>${esc(m.goal)}</p></div>` : ''}
+      ${tracks.length ? `<div class="prof-sec"><span class="muted">Paths she's on</span><div class="chips">${tracks.map(t => `<span class="pill">${esc(label(t))}</span>`).join(' ')}</div></div>` : ''}
+      ${c.note ? `<div class="prof-sec"><span class="muted">${c.from_id === myId() ? 'Your note to her' : 'Her note to you'}</span><p class="note">“${esc(c.note)}”</p></div>` : ''}
+      <p class="muted prof-since">✓ Connected${since ? ' · ' + since : ''}</p>
+      <div class="actions"><button class="btn link" data-close>Close</button><button class="btn" data-thread="${c.id}">Message ${esc(first)}</button></div></div>`);
+    box.classList.add('modal-prof');
+  }
+
+  // ---------- search (anyone in the network; results are short cards) ----------
+  let q = '', results = null, searchT = null, searchSeq = 0;
+  const textMatch = (m, t) => [cleanName(m.name), m.role, m.city, m.track, (window.App && App.trackLabel(m.track)) || '', (m.interests || []).join(' ')]
+    .join(' ').toLowerCase().includes(t);
+  async function runSearch(term) {
+    const seq = ++searchSeq, t = term.trim().toLowerCase();
+    if (t.length < 2) { results = null; renderResults(); return; }
+    results = members.filter(m => textMatch(m, t)); renderResults(); // instant local pass
+    const safe = t.replace(/[^a-z0-9 '\-]/g, ' ').trim();
+    if (!safe || !db()) return;
+    const like = '*' + safe.replace(/ +/g, '*') + '*';
+    const ors = ['name', 'role', 'city', 'track'].map(f => f + '.ilike.' + like).join(',');
+    const r = await JDB.select('members', COLS + '&or=(' + encodeURIComponent(ors) + ')&limit=40');
+    if (seq !== searchSeq || !r) return;
+    r.forEach(x => { if (x.id !== myId() && !memberById(x.id)) members.push(x); });
+    const ids = new Set(results.map(x => x.id));
+    results = results.concat(r.filter(x => x.id !== myId() && !ids.has(x.id)).map(x => memberById(x.id) || x));
+    renderResults();
+  }
+  function renderResults() {
+    const el = $('netResults'); if (!el) return;
+    if (!results) { el.innerHTML = ''; return; }
+    el.innerHTML = results.length
+      ? results.slice(0, 12).map(m => person(m)).join('') + `<p class="muted search-hint">Tap a name for her card. Full profiles open once you're connected.</p>`
+      : `<p class="empty">No one matches “${esc(q)}” yet.</p>`;
+  }
+
   // ---------- messages + video chat ----------
   function openThread(cid) {
     const c = conns.find(x => String(x.id) === String(cid)); if (!c) return;
     const m = memberById(c.from_id === myId() ? c.to_id : c.from_id); if (!m) return;
     const first = cleanName(m.name).split(' ')[0];
     const isMentor = (+m.years || 0) >= (+(me().profile || {}).years || 0) + 5;
-    const box = App.modal(`<div class="thread-head">${avatar(m)}<div><h3 style="margin:0">${esc(cleanName(m.name))}</h3><small class="muted">${esc(sub(m))}</small></div></div>
+    const box = App.modal(`<div class="thread-head"><a href="#" data-profile="${m.id}">${avatar(m)}</a><div><h3 style="margin:0"><a href="#" class="who-link" data-profile="${m.id}">${esc(cleanName(m.name))}</a></h3><small class="muted">${esc(sub(m))}</small></div></div>
       <div class="thread" id="thList"></div>
       ${msgsOn === false ? '<p class="empty">Messaging is switching on soon. For now, your note and her reply live in the request.</p>' : `
       <div class="chips th-prompts">${PROMPTS[isMentor ? 'mentor' : 'peer'].map(q => `<button type="button" class="chip small" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>
@@ -216,11 +276,12 @@
 
   async function accept(cid) {
     const r = await JDB.update('connections', 'id=eq.' + cid, { status: 'accepted' });
-    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; App.toast('Connected! Say hi.'); setTimeout(() => openThread(cid), 400); }
+    if (r) { const c = conns.find(x => String(x.id) === String(cid)); if (c) c.status = 'accepted'; const other = c && (c.from_id === myId() ? c.to_id : c.from_id); App.toast('Connected! Her full profile is open to you now.'); setTimeout(() => other ? openProfile(other) : openThread(cid), 400); }
     renderCard(); renderBadge(); if (!$('network').hidden) renderPage();
   }
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-connect]'); if (c) { e.preventDefault(); openConnect(c.dataset.connect); return; }
+    const pf = e.target.closest('[data-profile]'); if (pf) { e.preventDefault(); openProfile(pf.dataset.profile); return; }
     const t = e.target.closest('[data-thread]'); if (t) { e.preventDefault(); openThread(t.dataset.thread); return; }
     const a = e.target.closest('[data-accept]'); if (a) { e.preventDefault(); a.disabled = true; accept(a.dataset.accept); }
   });
@@ -238,7 +299,7 @@
     if (e.detail.what === 'achievements') upsertSoon();
   });
 
-  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard, openThread };
+  window.Network = { init, upsertMe, onYourPath, load, renderPage, renderCard, openThread, openProfile, search: runSearch };
   // app.js may have called showApp() before this file loaded
   if (window.App && App.shown) init();
 })();
