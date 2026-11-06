@@ -104,7 +104,7 @@
           const v = head ? 205 : body ? 70 : 150;   // enough contrast that the women picked for it still read as a portrait
           colors[i * 3] = v; colors[i * 3 + 1] = v * 0.9; colors[i * 3 + 2] = v * 0.85; labs[i] = rgb2lab(v, v * 0.9, v * 0.85);
         }
-      }).then(() => { assign(); draw(); });
+      }).then(() => { assignGhost(); assign(); draw(); });
       return photoReady;
     }
 
@@ -128,6 +128,31 @@
       }
       if (pool.length < 40) { const have = new Set(pool.map(t => t.id)); pool = pool.concat(Lib.candidates(a.track).filter(t => !have.has(t.id))).slice(0, 160); }
       pools.set(key, pool); return pool;
+    }
+
+    // Locked cells aren't flat gray: each shows a faded real woman matched to the photo's color there, so the whole
+    // portrait reads as a mosaic from day one and your progress is the cells that turn full-color (P2).
+    let ghost = null;
+    function assignGhost() {
+      if (!labs || !Lib.tiles.length) return;
+      const pool = Lib.tiles.filter(t => t.kind === 'person' && t.lab);
+      if (!pool.length) return;
+      ghost = new Int32Array(CELLS).fill(-1);
+      const used = new Map();
+      for (let i = 0; i < CELLS; i++) {
+        const L = labs[i], best = [];
+        for (const t of pool) {
+          const d = de2(L, t.lab) + (used.get(t.id) || 0) * 60;
+          if (best.length < 4 || d < best[3][0]) { best.push([d, t.id]); best.sort((x, y) => x[0] - y[0]); if (best.length > 4) best.pop(); }
+        }
+        const pick = best[hash(i * 17 + seed) % best.length][1];
+        ghost[i] = pick; used.set(pick, (used.get(pick) || 0) + 1);
+      }
+    }
+    function drawGhost(i, x, y, cs) {
+      if (!ghost || ghost[i] < 0 || !Lib.atlas) return;
+      const gt = Lib.tile(ghost[i]); if (!gt) return;
+      ctx.globalAlpha = 0.4; Lib.drawTile(ctx, gt, x, y, cs + 0.5, cs + 0.5); ctx.globalAlpha = 1;
     }
 
     function assign() {
@@ -173,6 +198,7 @@
         if (!t || age < 0 || !Lib.atlas) {
           const l = Math.round((0.299 * r + 0.587 * g + 0.114 * b) * 0.9);
           ctx.fillStyle = `rgb(${l},${l},${l})`; ctx.fillRect(x, y, cs + 0.5, cs + 0.5);
+          drawGhost(i, x, y, cs);
           if (t && age < 0) animating = true;
           continue;
         }
@@ -209,7 +235,8 @@
       snapshot(px = 96) {
         if (!inst.drawn) return null;   // not painted yet: a snapshot would be a black square
         const c = document.createElement('canvas'); c.width = c.height = px;
-        c.getContext('2d').drawImage(canvas, 0, 0, px, px);
+        const g2 = c.getContext('2d'); g2.fillStyle = '#EDE7E1'; g2.fillRect(0, 0, px, px); // never a black square if the portrait hasn't drawn yet
+        g2.drawImage(canvas, 0, 0, px, px);
         return c.toDataURL('image/jpeg', 0.7);
       },
       // x, y in CSS px relative to the canvas -> { tile, achievement } or null
