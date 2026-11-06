@@ -104,16 +104,21 @@
   // ---------- hover, zoom, pan, pinch, tap ----------
   const pts = new Map(); // active pointers
   let down = null, moved = false, pinchD = 0;
+  // A tap opens the card after a short wait, so a double-click/double-tap (zoom) can cancel it.
+  let tapTimer = null;
+  const cancelTap = () => { clearTimeout(tapTimer); tapTimer = null; };
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const k = e.ctrlKey ? 0.012 : 0.0025; // ctrlKey = trackpad pinch
     Mosaic.zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * k));
   }, { passive: false });
   canvas.addEventListener('dblclick', e => {
+    cancelTap();
     if (Mosaic.zoom() > 1.05) Mosaic.resetView(); else Mosaic.zoomAt(e.clientX, e.clientY, 4);
   });
   canvas.addEventListener('pointerdown', e => {
     canvas.setPointerCapture(e.pointerId);
+    cancelTap(); // second press of a double-click
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 1) { down = { x: e.clientX, y: e.clientY }; moved = false; }
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); moved = true; }
@@ -143,7 +148,8 @@
     if (e.pointerType !== 'mouse') Mosaic.setLens(null);
     if (tap && started && e.type === 'pointerup') {
       const tile = Mosaic.tileAt(e.clientX, e.clientY);
-      if (tile) { setFrozen(true); openCard(tile, true); }
+      cancelTap();
+      if (tile) tapTimer = setTimeout(() => { tapTimer = null; setFrozen(true); openCard(tile, true); }, 260);
     }
   }
   canvas.addEventListener('pointerup', endPointer);
