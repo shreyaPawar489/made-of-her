@@ -67,6 +67,7 @@
       '<div class="sub">' + esc(p.role || App.trackLabel(p.track)) + '</div>' +
       '<div class="sub">' + esc(subline(p)) + (p.city ? ' · ' + esc(p.city) : '') + '</div>' +
       (p.openToMentor ? '<span class="mentor-tag">★ Open to mentoring</span>' : '') +
+      (/^https:\/\/www\.linkedin\.com\/in\//.test(p.linkedin || '') ? '<div><a class="li-link" href="' + esc(p.linkedin) + '" target="_blank" rel="noopener"><span class="li-logo">in</span> LinkedIn</a></div>' : '') +
       '<div class="progress"><div class="bar"><i style="width:' + pr.pct + '%"></i></div>' +
       '<div class="lbl"><b>' + pr.pct + '%</b> made of her · ' + pr.women + ' women</div></div>' +
       (p.goal ? '<div class="goal"><span class="muted">Where I\'m going</span><br>' + esc(p.goal) + '</div>' : '');
